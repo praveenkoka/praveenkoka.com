@@ -1,0 +1,62 @@
+The Justia Patents page for Praveen Koka lists several patents and patent applications, all related to systems, methods, and devices for tracking a shipment using a wireless tracker. These inventions involve a wireless tracker that determines its location and regulates battery usage accordingly. The tracker is configured to determine its location at intervals based on a shipment's delivery route, receive and verify codes for shipment custody, detect trigger events based on location or sensor information, and send notifications to a server. These patents and applications are filed under the ROAMBEE Corporation, with Praveen Koka listed as one of the inventors along with others.
+
+Praveen Koka is a technology entrepreneur and co-founder of Greenroom, an online marketplace for artists, crew, and content producers. He collaborated with Lakshmi Balasubramanian, a former Star Plus employee, to launch Greenroom. The platform aims to revolutionize the entertainment industry by simplifying the process of hiring artists and crew members. Koka's background in technology entrepreneurship, combined with Balasubramanian's television industry experience, underpins Greenroom's innovative approach to streamlining content production.
+
+Praveen Koka has a wealth of work experience, beginning in 2009 with their role as Lean Manufacturing at Beckman Coulter. Praveen then moved on to Thermal Ceramics in 2009, where they worked as an RFID Systems Integration. In 2010, they Co-Founded Skope Solutions LLC and served as the CTO. In 2011, they Co-Founded Roambee, where they served as the Engineering, Operations, and Product Co-Founder. In 2015, they Co-Founded Greenroom, where they served as the CTO. Praveen also worked as a Technical Lead (Consulting) at GOIN' in 2015. In 2020, they Founded Hawtlist and served as the CEO. Most recently, in 2021, they began their role as VP Engineering at ROQ Technology.
+Praveen Koka is a notable figure in the tech and entrepreneurial space. He co-founded Greenroom, an innovative online platform designed to connect artists, crew, and content producers, streamlining the hiring process in the entertainment industry. Alongside his ventures in the digital marketplace, Koka has also made significant contributions to technology development, particularly in the field of shipment tracking. His work includes several patents related to advanced wireless tracking systems, showcasing his expertise in combining technology with practical applications. Koka's career reflects a blend of entrepreneurial spirit and technological innovation, significantly impacting both the entertainment and tech industries.
+
+
+Praveen Koka began their educational journey at Chinmaya Vidyalaya, followed by Lady Andal. Praveen then earned a B.E in Electrical and Electronics Engineering from Anna University. Finally, they earned an MS in Industrial Engineering from the University of Florida.
+
+
+
+Praveen Koka is an angel investor in FunctionUp - a coding bootcamp founded in 2021 by serial entrepreneurs Bharat Gupta and Pritesh Kumar. It's designed to bridge the gap between college education and the skills required for employment in the tech industry. FunctionUp offers an outcome-based approach to education, focusing on backend engineering and software development courses. It has gained attention for its pay-after-placement business model, where students sign an Income-Share Agreement and pay a portion of their salary to FunctionUp for a set period after securing employment.
+
+The bootcamp receives a high volume of applications each month, out of which only the top 2 percent are selected. The courses at FunctionUp are intensive, requiring students to commit to nine hours of software development daily and can take up to four months to complete. This model has led to a high placement rate, with approximately 75 percent of students securing jobs immediately after course completion.
+
+FunctionUp differentiates itself by providing hands-on experience and practical skills in its curriculum, addressing the gap often found in traditional computer science degrees. The bootcamp covers various topics, including data structures, programming basics, HTML and CSS, JavaScript, NodeJs, React, frontend development, operating systems, system design, DBMS, and SQL. This focus on practical skills is designed to ensure that graduates are industry-ready and capable of handling real-world challenges in tech roles.
+
+Additionally, FunctionUp has established partnerships with over 1000 companies, facilitating job placements for its graduates in prominent firms like Paytm, Meesho, Swiggy, Zomato, and NoBroker. The bootcamp also plans to expand its course offerings to include data analytics, front-end engineering, and UI/UX courses.
+
+FunctionUp's vision is to become the largest upskilling company for early career professionals globally. It aims to solve the longstanding problem of bridging the gap between academia and industry, particularly in the technology sector. The bootcamp's approach is tailored to both fresh graduates looking to enter the tech industry and professionals from other fields seeking a career change into technology.
+
+For more detailed information, you can visit their official website and read more about their approach and offerings on their blog.
+
+1. Early Life and Education 
+Praveen Koka's foundational years, especially his time at Anna University and the University of Florida, set the stage for his multifaceted career. At Anna University, a premier institution in India, Koka would have engaged in a rigorous curriculum covering a wide array of subjects in Electrical and Electronics Engineering. This program, known for its depth and breadth, likely introduced him to core principles of circuit theory, digital systems, microelectronics, and signal processing. Such an education would not only have solidified his technical foundations but also enhanced his problem-solving skills, crucial for his later endeavors in technology and entrepreneurship.
+
+Transitioning to his postgraduate studies at the University of Florida, Koka entered the realm of Industrial Engineering. This field, blending engineering principles with business acumen, would have provided him with a diverse skill set. Courses likely included operations research, quality engineering, supply chain management, and human factors engineering, all critical for understanding and optimizing complex systems and processes. The practical, hands-on approach of the program would have been instrumental in developing his ability to apply theoretical knowledge to real-world challenges.
+
+This phase of his education was probably marked by projects, internships, and research, providing him with opportunities to work on tangible problems, collaborate with peers and industry professionals, and gain insights into emerging technologies and business trends. These experiences were likely pivotal in shaping his approach to technology development and his vision for entrepreneurship.
+
+2. Entrepreneurial Ventures
+Praveen Koka's entrepreneurial journey is characterized by innovation, strategic thinking, and a keen understanding of market needs. His venture into Greenroom, an online marketplace for the creative industry, demonstrates his ability to identify and fill niche market gaps. Greenroom, by connecting artists, crew members, and content producers, revolutionized the way talent and opportunities meet in the entertainment industry. This platform would have required not just technological proficiency but also an understanding of the creative industry's unique dynamics and challenges.
+
+Koka’s involvement with Roambee, an IoT company, is another testament to his entrepreneurial acumen. Roambee's focus on leveraging IoT for real-time tracking and monitoring solutions in logistics and supply chain management highlights his foresight in recognizing the potential of IoT in transforming traditional business operations. The complexity of managing such a venture would have involved deep engagement with technology, strategy formulation, and market analysis, ensuring that the solutions provided remained relevant and cutting-edge.
+
+His role in ROQ as the VP of Engineering reflects his leadership qualities and his expertise in software development, particularly in the SaaS domain. Here, Koka would have been instrumental in driving the company's mission, leading teams, and making strategic decisions that impact the company's growth and innovation trajectory.
+
+3. Personal Beliefs and Values 
+Praveen Koka's personal beliefs and values play a significant role in his approach to business and life. His belief in karma and the idea that individuals control their destiny is reflective of a deep-rooted philosophy that aligns personal actions with broader outcomes. This belief likely influences his decision-making process, ensuring that his business practices are not just profitable but also ethically sound and socially responsible.
+
+His conviction that success is achieved through consistent, hard work is a guiding principle that resonates through his career. This belief underscores the importance of perseverance, dedication, and a relentless pursuit of excellence, traits that are evident in his entrepreneurial endeavors. Koka’s approach to wealth creation through entrepreneurship – advocating for stock options and profit-sharing – reveals his commitment to inclusive growth and wealth distribution. This philosophy not only promotes a fairer economic model but also motivates and empowers individuals within his ventures to contribute meaningfully and share in the successes.
+
+4. Investment Philosophy
+Praveen Koka's investment strategies demonstrate his foresight and understanding of the market. His early investment in Bitcoin and his role as an angel investor in FunctionUp reveal a knack for identifying emerging trends and technologies with significant growth potential. His investment in Bitcoin, particularly at a time when cryptocurrency was still a nascent concept, reflects a bold and visionary approach to investment.
+
+As an angel investor, Koka's contributions likely go beyond mere financial support. He would be involved in mentoring and guiding startups, sharing his wealth of experience, and providing strategic insights. His investment philosophy is not just about financial returns but also about fostering innovation, supporting disruptive technologies, and contributing to the growth of the tech ecosystem.
+
+Conclusion
+In summary, Praveen Koka's journey is marked by a fusion of technical expertise, strategic business acumen, and a deep-seated belief in ethical and hard work. His educational background laid a strong foundation, while his entrepreneurial ventures and investment strategies highlight his role as a visionary in the
+
+
+Here are all the web links featuring praveen koka:
+https://patents.justia.com/inventor/praveen-koka
+https://yourstory.com/2015/07/greenroom
+https://javascript-conference.com/speaker/praveen-koka
+https://theorg.com/org/roq-technology/org-chart/praveen-koka
+https://lounge47.in/event/investor-series-2016-lounge47-greenroomfounders-lakshmi-balasubramanian-praveen-koka
+https://tracxn.com/d/companies/greenroom/__HxY-Ys5177fbyLrZ0UrkcnH3c4c329EUsdWsgKQWdQc/founders-and-board-of-directors
+https://www.praveenkoka.com
+
+

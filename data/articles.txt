@@ -1,0 +1,142 @@
+Article 1:
+
+Stackoverflow is finished, unless they have a massive pivot in the pipeline.
+
+They’ve been the long-standing holy grail for programmers to find answers. They were even acquired in 2021 for a staggering $1.8 billion a ~30x revenue multiple from public numbers.
+
+But their traffic and MAUs have flatlined, and are decreasing by 6% YOY.
+
+Two Stackoverflow killers:
+
+🤖 ChatGPT has changed developer behavior completely. We no longer need to search around and wait for answers.
+👩‍🚀 Github Copilot - solves problems directly in your codebase, without even having to leave and switch context
+
+So, how could they reimagine themselves to be more relevant?
+
+Firstly, this is a larger problem - for message boards, Q&A sites, and communities in general, and not just for Stackoverflow.
+
+Chat based AI beats message boards on two fronts:
+🔫 Immediate answers - you don’t need to wait for them anymore with AI
+🔫 Iteration and precision - you can ask follow ups, rephrase, provide more information and get improved answers immediately
+
+So, what can our beloved Stackoverflow do? Some thoughts:
+
+⚡ Generate instant answers - from the huge knowledge base already on DB. Enable iterative refinement of answers.
+
+⚡ Human validation and reinforcement learning - provided by real humans via upvotes, improving the quality and confidence of answers. Crowd source the reinforcement learning, rather than just having one point of reference. This is where a message board could really trump a chat experience
+
+Even with all of this, I wonder if message boards as a knowledge sharing medium can recover completely.
+
+What are your thoughts? Will you use a message board again?
+
+Image source Similarweb
+
+
+
+
+Article 2:
+
+
+Are you a 10x developer?
+
+And does it matter? Let’s examine.
+
+A 10x developer literally achieves 10 times more per unit time than the local average. These are the guys and girls that really move the needle - they’re the Lebron James(es) of your engineering team.
+
+Being or becoming a 10x is not easy. Some even argue that they’re a myth. Personally I know and work with a couple of them on our team. They are the real deal.
+
+My hypothesis however is that the very baseline for developers will become 10x of where it stands today.
+
+In the image I shared below, Sequoia Capital sliced and diced the developer tools ecosystem. It's a beautiful picture.
+
+They’re really hyped about AI tooling in this space (question marks on the right), and so am I.
+
+I’ve been writing software for well over a decade now, and the way code was developed has been pretty much static:
+
+New stacks, frameworks, and tools. Same old workflows and methods.
+
+Not any more.
+
+Developer behavior has changed for the first time in a decade. And massively so. This is just the beginning.
+
+🛠️ Here are some tools that are multiplying developer productivity:
+
+1. Github Co-pilot: If you aren’t using it already to do all the mundane coding in your IDE, you should try it. It’s totally worth the $10/month.
+
+2. ROQ.ai: Converts your SaaS idea in plain English to a boilerplate webapp with a database, REST APIs, frontend forms, authentication, authorization, notifications, and file uploads baked in. All in 5 minutes.
+
+3. Grit.io - Fixes your technical debt automatically, with AI.
+
+4. Easycode: Writes code snippets into your codebase from your IDE, uses GTP-4 under the hood. It even answers questions about your code
+
+
+✨ Imagine the ridiculous multiplier effect of using Github co-pilot with ROQ.ai. What would that look like?
+
+⚡Generate a fully loaded skeleton of your app in 5 minutes. Use Github co-pilot to write pieces of your app on top.
+
+⚡Add your own core logic: the stuff that really needs your grey cells to fire at full capacity. Stitch them all together.
+
+⚡Ship.
+
+That, is how software will be written. The baseline is shifting to 10X of where it used to be.
+
+How much further will you take it?
+
+
+
+
+
+Article 3: 
+
+Software developers: AI is going to take over your job
+Figuratively. Not literally.
+
+55% of software professionals are not using or don’t plan to use AI tools 🤯(Stackoverflow survey 2023 w a sample of ~80k devs)
+
+Extrapolating, and accounting for variance, I am still left thinking: What the heck? 
+
+We’re in the decade of AI. Tech visionaries predict that it will impact our lives with the same magnitude that the internet did when it became mainstream in the 90s.
+
+So what does it mean for us software peops?
+
+Let me give you the TL;DR here: AI is a tremendous wealth creation opportunity, and not a threat. But of course with caveats.
+
+📈 Some macro numbers:
+McKinsey forecasts that AI will add $13 trillion to the global economy by 2030. To put that into perspective, that’s:
+
+~ Half the GDP of the U.S
+~ 3x the GDP of Germany
+~ 3.5x the GDP of India
+> 10x of the global Crypto market cap
+
+There is massive headroom and business opportunity for the nerds that unlock that economy.
+
+💻 And software developers will lead that charge. It's the perfect window.
+I see two major buckets of opportunity:
+
+1. Core AI: platforms like Open AI, Anthropic, Hugging face. They solve, generic problems with hard tech 
+2. AI enabled tools and utils: Jasper.ai, Otter, and such. Some of them build their own models, while others will sit atop AI platforms. They dive deep into specialized problems.
+
+(Great graphic below by Kelvin Mu)
+
+❓So as a developer, what's my strategy?
+
+You are well positioned to do one of two things:
+
+1. Work for companies in one of those two buckets above as an early team member. Get some equity on the table. Create longterm value there. 
+2. If you have entrepreneurial leanings, there are several low-hanging fruit. Build tools on top of AI platforms. Use them to power your app's core or UX.
+
+Persist through either of these two paths, and the chances are high that you will create significant wealth through this decade.
+
+❓How do I start?
+
+The AI domain could be overwhelming, but your endeavor begins with simple starting steps.
+
+If you’re in the 55% cohort that doesn’t use AI tooling yet. Jump over to the other side. Now!
+
+1. Use AI tools for your work: You can do 10x more with AI tools. Get ChatGPT and Github Copilot ($10/mo). If you’d like to know about other tools that I use, write a comment or follow me, I’ll be soon compiling a list of great dev-specific tools.
+2. Take a beginner course on AI: Equip yourself with basic knowledge about AI. You may never need to build deep AI tech, but you must know the fundamentals and high level concepts. Links in the 1st comment. 
+3. Dabble with API platforms: Build side projects with the OpenAI API. If you’re a javascript engineer, then checkout Huggingface js.
+4. Plan your next move: If you did the first three, you’re now aware of the possibilities for your career ahead. Time to execute.
+
+What will you build in the age of AI? Let me know in the comments.
