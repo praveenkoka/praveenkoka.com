@@ -1,13 +1,13 @@
 export type SiteConfig = typeof siteConfig
 
 export const siteConfig = {
-  name: "Praveen Koka",
+  name: "praveenkoka",
   description: "CTO, CPTO, Software Architect",
   mainNav: [
-    {
-      title: "Work",
-      href: "/",
-    },
+    // {
+    //   title: "Work",
+    //   href: "/",
+    // },
     // {
     //   title: "Life",
     //   href: "/life",
