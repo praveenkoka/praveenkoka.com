@@ -11,6 +11,7 @@ export default function IndexPage() {
         <div className="flex flex-col md:flex-row max-w-[980px] items-center md:items-start gap-12 mb-8">
           <Avatar className="w-48 h-48 mx-auto md:mx-0">
             <AvatarImage src="/profile-pic.jpg" />
+
             <AvatarFallback>PK</AvatarFallback>
           </Avatar>
           <div className="flex flex-col justify-center sm:h-48 text-center md:text-left">
