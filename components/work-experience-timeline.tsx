@@ -1,4 +1,4 @@
-import { ReactNode, useState } from "react"
+import { useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { WORK, Work } from "@/constants/work"
@@ -92,18 +92,18 @@ const ExperienceNode: React.FC<Work> = ({
               onClick={() => openLightbox(index)}
             >
               {item.type === "image" ? (
-                <div className="rounded-2xl h-full">
+                <div className="rounded-2xl h-full border-2">
                   <Image
                     height={200}
                     width={200}
                     src={item.src}
                     alt="Carousel item"
-                    className="rounded-2xl"
+                    className="rounded-2xl border-4 border-white"
                   />
-                  <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-r from-violet-600 to-indigo-600 opacity-20 rounded-2xl" />
+                  <div className="absolute top-0 left-0 w-full h-full bg-black opacity-0 hover:opacity-10 rounded-2xl transition duration-300" />
                 </div>
               ) : (
-                <div className="rounded-2xl flex h-full">
+                <div className="rounded-2xl flex h-full border-2">
                   <div className="absolute top-2 right-2">
                     <PlayCircle
                       color="white"
@@ -116,9 +116,9 @@ const ExperienceNode: React.FC<Work> = ({
                     width={200}
                     src={getYouTubeThumbnail(item.src) || ""}
                     alt="Carousel item"
-                    className="rounded-2xl"
+                    className="rounded-2xl border-4 border-white"
                   />
-                  <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-r from-violet-600 to-indigo-600 opacity-20 rounded-2xl" />
+                  <div className="absolute top-0 left-0 w-full h-full bg-black opacity-0 hover:opacity-10 rounded-2xl transition duration-300" />
                 </div>
               )}
             </div>

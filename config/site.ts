@@ -5,9 +5,13 @@ export const siteConfig = {
   description: "CTO, CPTO, Software Architect",
   mainNav: [
     {
-      title: "Home",
+      title: "Work",
       href: "/",
     },
+    // {
+    //   title: "Life",
+    //   href: "/life",
+    // },
   ],
   links: {
     linkedin: "https://linkedin.com/in/praveenkoka",
