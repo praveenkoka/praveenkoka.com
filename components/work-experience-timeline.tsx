@@ -100,7 +100,7 @@ const ExperienceNode: React.FC<Work> = ({
                     alt="Carousel item"
                     className="rounded-2xl"
                   />
-                  <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-r from-black to-black opacity-20 rounded-2xl" />
+                  <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-r from-violet-600 to-indigo-600 opacity-20 rounded-2xl" />
                 </div>
               ) : (
                 <div className="rounded-2xl flex h-full">

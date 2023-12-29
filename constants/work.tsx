@@ -119,19 +119,19 @@ export const WORK: Work[] = [
     portfolio: [
       {
         type: "image",
-        src: "/portfolio/hl1.png",
+        src: "/portfolio/hl1.jpg",
       },
       {
         type: "image",
-        src: "/portfolio/hl2.png",
+        src: "/portfolio/hl2.jpg",
       },
       {
         type: "image",
-        src: "/portfolio/hl3.png",
+        src: "/portfolio/hl3.jpg",
       },
       {
         type: "image",
-        src: "/portfolio/hl4.png",
+        src: "/portfolio/hl4.jpg",
       },
       // {
       //   type: "video",
@@ -162,30 +162,30 @@ export const WORK: Work[] = [
     imgUrl: "/logos/goin.svg",
     companyUrl: "https://goin.org",
     portfolio: [
-      {
-        type: "image",
-        src: "/portfolio/hl1.png",
-      },
-      {
-        type: "image",
-        src: "/portfolio/hl2.png",
-      },
-      {
-        type: "image",
-        src: "/portfolio/hl3.png",
-      },
-      {
-        type: "image",
-        src: "/portfolio/hl4.png",
-      },
+      // {
+      //   type: "image",
+      //   src: "/portfolio/hl1.png",
+      // },
+      // {
+      //   type: "image",
+      //   src: "/portfolio/hl2.png",
+      // },
+      // {
+      //   type: "image",
+      //   src: "/portfolio/hl3.png",
+      // },
+      // {
+      //   type: "image",
+      //   src: "/portfolio/hl4.png",
+      // },
       // {
       //   type: "video",
       //   src: "https://www.youtube.com/watch?v=m6_-iSVkEUE",
       // },
-      {
-        type: "video",
-        src: "https://www.youtube.com/watch?v=D3ST2Kgxufc",
-      },
+      // {
+      //   type: "video",
+      //   src: "https://www.youtube.com/watch?v=D3ST2Kgxufc",
+      // },
     ],
   },
   {
