@@ -15,13 +15,14 @@ export default function IndexPage() {
           </Avatar>
           <div className="flex flex-col justify-center sm:h-48 text-center md:text-left">
             <h1 className="text-3xl font-extrabold leading-tight tracking-tighter md:text-4xl mb-2">
-              👋 Hi there, I'm Praveen Koka
+              👋 Hi there, I&apos;m Praveen Koka
             </h1>
             <p className="max-w-[700px] text-lg text-muted-foreground mx-auto md:mx-0">
-              I'm a CTO, CPTO, and software architect. I've founded and built 3
-              startups in IOT, analytics, and SaaS. Led teams of 5-30 members
-              across product, engineering, and operations. Currently work as VP
-              Engineering at an AI dev tools company in Berlin.
+              I&apos;m a CTO, CPTO, and software architect. I&apos;ve founded
+              and built 3 startups in IOT, analytics, and SaaS. Led teams of
+              5-30 members across product, engineering, and operations.
+              Currently work as VP Engineering at an AI dev tools company in
+              Berlin.
             </p>
           </div>
         </div>
