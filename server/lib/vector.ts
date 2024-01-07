@@ -112,6 +112,7 @@ export const queryDocs = async (searchText: string) => {
 
   const similarDocs = await vectorStore.similaritySearch(searchText, 2)
   console.log({ similarDocs })
+  return "foo"
 
   const context = similarDocs
     .map((doc) => doc.pageContent)

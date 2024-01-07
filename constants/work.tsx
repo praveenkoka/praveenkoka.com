@@ -30,8 +30,8 @@ export const WORK: Work[] = [
     endDate: "Present",
     summary: (
       <>
-        Led multiple Engineering teams to ship an AI platform that generates and
-        deploys webapps from plaintext prompts.
+        Leading multiple Engineering teams to ship an AI platform that generates
+        and deploys webapps from plaintext prompts.
         <br />
         <br />
         Started as Tech Lead, promoted to Director in 3 months, and then to VP
