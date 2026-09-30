@@ -1,22 +1,12 @@
-# next-template
+# praveenkoka.com
 
-A Next.js 13 template for building apps with Radix UI and Tailwind CSS.
+Personal site of Praveen Koka. A static site (plain HTML and CSS) that shares its visual language with [tandavlabs.com](https://www.tandavlabs.com).
 
-## Usage
+- `public/index.html`: home page
+- `public/writing/index.html`: all articles from the Trilogy AI Substack
+- `public/styles.css`: styles
+- `public/assets/img/`: images
 
-```bash
-npx create-next-app -e https://github.com/shadcn/next-template
-```
+Deployed on Vercel (project `praveenkoka-com`); `vercel.json` serves `public/` with no build step.
 
-## Features
-
-- Next.js 13 App Directory
-- Radix UI Primitives
-- Tailwind CSS
-- Icons from [Lucide](https://lucide.dev)
-- Dark mode with `next-themes`
-- Tailwind CSS class sorting, merging and linting.
-
-## License
-
-Licensed under the [MIT license](https://github.com/shadcn/ui/blob/main/LICENSE.md).
+Local preview: `npx serve public`
