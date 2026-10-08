@@ -306,7 +306,7 @@ function play(name, fade = 0.35, randomStart = false) {
 const ONE_SHOTS = ["Acknowledging", "Head Nod Yes", "Waving", "Dismissing Gesture", "Salute"];
 const IDLES = ["Breathing Idle", "Offensive Idle"];
 const DANCES = ["Dancing", "Hip Hop Dancing", "Wave Hip Hop Dance"];
-let currentIdle = "Breathing Idle", danceIndex = -1, currentDance = DANCES[0], jumpingUntil = 0;
+let currentIdle = "Breathing Idle", currentDance = null, jumpingUntil = 0;
 let nextIdleChange = performance.now() + 9000;
 
 let talkFlip = false;
@@ -609,7 +609,8 @@ function gesture(g) {
   else if (g === "salute") play("Salute", 0.25);
   else if (g === "dismiss") play("Dismissing Gesture", 0.25);
   else if (g === "dance") { // a different dance each time
-    danceIndex = (danceIndex + 1) % DANCES.length; currentDance = DANCES[danceIndex];
+    const others = DANCES.filter((d) => d !== currentDance); // random, but never the same dance twice in a row
+    currentDance = others[Math.floor(Math.random() * others.length)];
     jumpingUntil = 0; dancingUntil = now + 10000; play(currentDance, 0.4); setTimeout(settle, 10100);
     boomboxOn(10000);
   } else if (g === "jumprope") { // declining something physical, while doing something physical
