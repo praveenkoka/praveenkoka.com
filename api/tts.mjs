@@ -19,14 +19,14 @@ const SAY = [
 ];
 const forSpeech = (t) => SAY.reduce((s, [re, to]) => s.replace(re, to), t);
 
-// Best-effort per-instance rate limit: 25 requests per IP per 10 minutes.
+// Best-effort per-instance rate limit: 60 requests per IP per 10 minutes (above chat's 50, so the 429 reply is still spoken).
 const hits = new Map();
 function limited(ip) {
   const now = Date.now();
   const recent = (hits.get(ip) || []).filter((t) => now - t < 10 * 60 * 1000);
   recent.push(now);
   hits.set(ip, recent);
-  return recent.length > 25;
+  return recent.length > 60;
 }
 
 // Streams raw 16-bit PCM (24 kHz mono) to the client as Gemini generates it.

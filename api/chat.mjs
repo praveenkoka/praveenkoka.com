@@ -25,20 +25,39 @@ const DANCE_ANGLES = [
 ];
 const DANCE_RE = /\b(danc\w*|boogie|groove|bust a move|moves|twerk|shake it|celebrate|party)\b/i;
 
-// Best-effort per-instance rate limit: 20 requests per IP per 10 minutes.
+// Best-effort per-instance rate limit: 50 requests per IP per 10 minutes.
+const WINDOW = 10 * 60 * 1000, LIMIT = 50;
 const hits = new Map();
 function limited(ip) {
   const now = Date.now();
-  const recent = (hits.get(ip) || []).filter((t) => now - t < 10 * 60 * 1000);
+  const recent = (hits.get(ip) || []).filter((t) => now - t < WINDOW);
   recent.push(now);
   hits.set(ip, recent);
-  return recent.length > 20;
+  if (recent.length <= LIMIT) return 0;
+  return Math.max(1, Math.ceil((recent[recent.length - 1 - LIMIT] + WINDOW - now) / 60000)); // minutes until under the limit
 }
+const pick = (a) => a[Math.floor(Math.random() * a.length)];
+const mins = (m) => `${m} minute${m === 1 ? "" : "s"}`;
+const RATE_LIMITED = [
+  (m) => `That's a 429, you've hit the rate limit. In plain English: you sent too many messages too fast, so the server put you in a little time-out. Try again in ${mins(m)}.`,
+  (m) => `That's a 429, you've hit the rate limit. It means the server has decided you've had enough of me for now. Shocking, I know. Back in ${mins(m)}.`,
+  (m) => `That's a 429, you've hit the rate limit. Think of it as a bouncer for computers, and you've been talking a lot. Give it ${mins(m)}.`,
+];
+const RATE_LIMITED_DANCE = [
+  (m) => `That's a 429, you've hit the rate limit, which means you asked too many times too fast. I'm dancing anyway, purely out of pity. Back in ${mins(m)}.`,
+  (m) => `That's a 429, you've hit the rate limit. The server says no more requests, but it never said no more dancing. Try again in ${mins(m)}.`,
+  (m) => `That's a 429, you've hit the rate limit. Fancy talk for too many messages, too fast. Here's a consolation dance while you wait ${mins(m)}.`,
+];
 
 export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).json({ error: "POST only" });
   const ip = (req.headers["x-forwarded-for"] || "").split(",")[0].trim() || "local";
-  if (limited(ip)) return res.status(429).json({ reply: "Easy there. Give me a minute to catch my breath.", gesture: "none" });
+  const wait = limited(ip);
+  if (wait) { // 200 so the page shows and speaks it like any other reply
+    const last = Array.isArray(req.body?.messages) ? String(req.body.messages.at(-1)?.text || "") : "";
+    const dance = DANCE_RE.test(last);
+    return res.status(200).json({ reply: pick(dance ? RATE_LIMITED_DANCE : RATE_LIMITED)(wait), gesture: dance ? "dance" : "none", rateLimited: true });
+  }
 
   // ~60-token cap per visitor message (240 chars), matching the page; model turns are already short
   const messages = Array.isArray(req.body?.messages) ? req.body.messages.slice(-8) : [];
