@@ -40,25 +40,29 @@ const camera = new THREE.PerspectiveCamera(32, 1, 0.1, 300);
 // so the edges always meet and you can swivel 360 degrees without a gap.
 const IMG_ASPECT = 3168 / 1344;
 const R = 34;
-const BH = (R * Math.PI) / IMG_ASPECT; // each copy spans half the circumference
+// Each world wraps its picture round the circle `copies` times (mirrored, so the joins are seamless).
+// Two copies suit skylines and big spaces; an interior uses four so its furniture is drawn at half the
+// size and sits in proportion to him.
+const bandHeight = (copies) => (2 * Math.PI * R) / copies / IMG_ASPECT;
+const BH = bandHeight(2);
 // Four worlds, all generated with the same framing (scripts/gen-world.mjs). Each one tints the
 // floor and the rim lights to match its light.
 const WORLDS = {
   bengaluru: { label: "Bengaluru", floor: 0x06070f, rimL: 0xff4fa3, rimR: 0xffa040, hemi: 0x7f8cff },
-  berlin: { label: "Berlin", floor: 0x0d0b09, rimL: 0xffb066, rimR: 0xffd49a, hemi: 0xc9b49a },
-  newyork: { label: "New York", floor: 0x110d10, rimL: 0xff7fa8, rimR: 0xffb36b, hemi: 0xb6a4d6 },
-  studio: { label: "Studio", floor: 0x0b0806, rimL: 0xff4fd2, rimR: 0x45dcff, hemi: 0x8a7a9a },
+  berlin: { label: "Berlin", floor: 0x1c2a12, floorOpacity: 0.55, rimL: 0xfff1d6, rimR: 0xffe2a8, hemi: 0xd6ecff, hemiI: 1.9, keyI: 3.2, particles: false },
+  court: { label: "Court", floor: 0x2a1708, floorOpacity: 0.6, rimL: 0xffb46b, rimR: 0x7fb4ff, hemi: 0xffe6c8, hemiI: 1.3, keyI: 2.8 },
+  studio: { label: "Studio", floor: 0x0b0806, rimL: 0xff4fd2, rimR: 0x45dcff, hemi: 0x8a7a9a, copies: 4, offset: 0.5 + 0.09 }, // kit off his shoulder, not hidden behind him
 };
 const worldParam = new URLSearchParams(location.search).get("world");
 let worldId = WORLDS[worldParam] ? worldParam : (() => { try { const w = JSON.parse(localStorage.getItem("pk-talk-v1"))?.world; return WORLDS[w] ? w : "bengaluru"; } catch { return "bengaluru"; } })();
 const texLoader = new THREE.TextureLoader();
 const worldTex = {};
 function loadWorldTex(id) {
-  return (worldTex[id] ||= new Promise((resolve, reject) => texLoader.load(`/talk/assets/worlds/${id}.jpg`, (t) => {
+  return (worldTex[id] ||= new Promise((resolve, reject) => texLoader.load(`/talk/assets/worlds/${id}.jpg?v=2`, (t) => {
     t.colorSpace = THREE.SRGBColorSpace;
     t.wrapS = THREE.MirroredRepeatWrapping;
-    t.repeat.x = -2;
-    t.offset.x = 0.5; // image centre directly behind him from the starting view
+    t.repeat.x = -(WORLDS[id].copies || 2);
+    t.offset.x = WORLDS[id].offset ?? 0.5; // image centre directly behind him from the starting view
     resolve(t);
   }, undefined, reject)));
 }
@@ -67,8 +71,14 @@ const backdrop = new THREE.Mesh(
   new THREE.CylinderGeometry(R, R, BH, 160, 1, true, Math.PI, Math.PI * 2),
   new THREE.MeshBasicMaterial({ map: backdropTex, color: 0x000000, side: THREE.BackSide, toneMapped: false })
 );
-// image horizon (45% from the top) at eye height, so the terrace floor in the picture lands behind his feet
-backdrop.position.set(0, 1.35 - 0.05 * BH + 2.6, 0);
+// image horizon (45% from the top) at eye height, so the terrace floor in the picture lands behind his feet;
+// the horizon stays at the same height whatever the band height
+const placeBackdrop = (copies) => {
+  const h = bandHeight(copies);
+  if (backdrop.geometry.parameters.height !== h) { backdrop.geometry.dispose(); backdrop.geometry = new THREE.CylinderGeometry(R, R, h, 160, 1, true, Math.PI, Math.PI * 2); }
+  backdrop.position.set(0, 1.35 - 0.05 * h + 2.6, 0);
+};
+placeBackdrop(2);
 scene.add(backdrop);
 
 // a dark glossy floor under him that fades out into the terrace in the picture
@@ -114,8 +124,11 @@ async function setWorld(id, instant = false) {
   if (mine !== worldSwitch) return;
   const w = WORLDS[id];
   backdrop.material.map = tex; backdrop.material.needsUpdate = true;
-  floor.material.color.setHex(w.floor);
+  placeBackdrop(w.copies || 2);
+  floor.material.color.setHex(w.floor); floor.material.opacity = w.floorOpacity ?? 0.92;
   rimL.color.setHex(w.rimL); rimR.color.setHex(w.rimR); hemi.color.setHex(w.hemi);
+  hemi.intensity = w.hemiI ?? 0.9; key.intensity = w.keyI ?? 2.4;
+  particles.visible = w.particles !== false;
   fadeWorld(1, instant ? 500 : 380);
 }
 function tickWorld(now) {
