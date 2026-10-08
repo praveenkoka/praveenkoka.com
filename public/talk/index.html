@@ -29,7 +29,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
   <link rel="preload" href="/talk/assets/bald_indian.glb" as="fetch" crossorigin>
-  <link rel="stylesheet" href="/talk/talk.css">
+  <link rel="stylesheet" href="/talk/talk.css?v=20261008c">
   <script type="importmap">
   {
     "imports": {
@@ -75,21 +75,21 @@
 
   <div id="caption" class="caption" aria-live="polite"><p class="q" id="cap-q"></p><p class="a" id="cap-a"></p></div>
 
-  <div class="chips" id="chips">
-    <button type="button" data-q="How was this built?">How was this built?</button>
-    <button type="button" data-q="What do you do at Trilogy?">Trilogy</button>
-    <button type="button" data-q="What's Tandav Labs?">Tandav Labs</button>
-    <button type="button" data-q="Why run OpenClaw on a cheap cloud box?">OpenClaw</button>
-    <button type="button" data-q="Agentic or vanilla RAG? What did your benchmarks show?">RAG benchmarking</button>
-    <button type="button" data-q="Tell me about your drum music sampling project.">Drum music sampling</button>
-    <button type="button" data-q="Do a little dance!">Dance <span aria-hidden="true">&#x1F57A;</span></button>
-  </div>
 
   <button type="button" id="built" class="built" aria-label="Built with three.js, Blender and Murf.ai. Ask how it was built.">
     <span class="built-k">Built with</span><span class="built-v">three.js &middot; Blender &middot; Murf.ai</span>
   </button>
 
   <form id="ask" class="ask" autocomplete="off">
+    <div class="chips" id="chips">
+      <button type="button" data-q="How was this built?">How was this built?</button>
+      <button type="button" data-q="What do you do at Trilogy?">Trilogy</button>
+      <button type="button" data-q="What's Tandav Labs?">Tandav Labs</button>
+      <button type="button" data-q="Why run OpenClaw on a cheap cloud box?">OpenClaw</button>
+      <button type="button" data-q="Agentic or vanilla RAG? What did your benchmarks show?">RAG benchmarking</button>
+      <button type="button" data-q="Tell me about your drum music sampling project.">Drum music sampling</button>
+      <button type="button" data-q="Do a little dance!">Dance <span aria-hidden="true">&#x1F57A;</span></button>
+    </div>
     <div class="bar">
       <input id="q" name="q" type="text" maxlength="240" placeholder="Ask me about my work..." aria-label="Ask Praveen a question" aria-describedby="count" disabled>
       <span id="count" class="count" aria-live="polite"></span>
@@ -113,6 +113,6 @@
     </div>
   </div>
 
-  <script type="module" src="/talk/app.js"></script>
+  <script type="module" src="/talk/app.js?v=20261008c"></script>
 </body>
 </html>

@@ -515,6 +515,12 @@ async function ask(question) {
   await speak(reply);
 }
 
+// keep the caption (and the wide chip column) just above the input block, whatever its height
+const askEl = $("ask");
+const setAskH = () => document.documentElement.style.setProperty("--ask-h", `${askEl.offsetHeight}px`);
+new ResizeObserver(setAskH).observe(askEl);
+setAskH();
+
 $("ask").addEventListener("submit", (e) => { e.preventDefault(); const q = $("q").value.slice(0, MAX_CHARS); $("q").value = ""; updateCount(); ask(q); });
 // Keep prompts chat-sized: about 60 tokens (~4 characters per token). The server enforces the same cap.
 const MAX_TOKENS = 60, MAX_CHARS = MAX_TOKENS * 4;
