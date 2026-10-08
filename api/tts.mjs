@@ -16,6 +16,7 @@ const SAY = [
   [/\bffmpeg\b/gi, "F F mpeg"],
   [/\bOpenClaw\b/g, "Open Claw"],
   [/\bRAG\b/g, "rag"],
+  [/\bROQ\b/g, "Rock"],
 ];
 const forSpeech = (t) => SAY.reduce((s, [re, to]) => s.replace(re, to), t);
 
