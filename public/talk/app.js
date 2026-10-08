@@ -648,7 +648,9 @@ function setBusy(b) {
   document.querySelectorAll("#chips button, #built").forEach((x) => (x.disabled = b));
 }
 
-async function ask(question) {
+// Phones and tablets: never focus the box on our own (it pops the keyboard); only when tapped.
+const TOUCH = matchMedia("(hover: none) and (pointer: coarse)").matches;
+async function ask(question, typed = false) {
   question = question.trim();
   if (!question || busy) return;
   ensureAudio();
@@ -669,7 +671,7 @@ async function ask(question) {
   capA.textContent = reply;
   gesture(g);
   setBusy(false);
-  $("q").focus({ preventScroll: true });
+  if (typed && !TOUCH) $("q").focus({ preventScroll: true }); // desktop: keep typing after Enter
   await speak(reply, clip);
 }
 
@@ -679,7 +681,7 @@ const setAskH = () => document.documentElement.style.setProperty("--ask-h", `${a
 new ResizeObserver(setAskH).observe(askEl);
 setAskH();
 
-$("ask").addEventListener("submit", (e) => { e.preventDefault(); const q = $("q").value.slice(0, MAX_CHARS); $("q").value = ""; updateCount(); ask(q); });
+$("ask").addEventListener("submit", (e) => { e.preventDefault(); const q = $("q").value.slice(0, MAX_CHARS); $("q").value = ""; updateCount(); if (TOUCH) $("q").blur(); ask(q, true); });
 // Keep prompts chat-sized: about 60 tokens (~4 characters per token). The server enforces the same cap.
 const MAX_TOKENS = 60, MAX_CHARS = MAX_TOKENS * 4;
 const approxTokens = (t) => Math.ceil(t.length / 4);
