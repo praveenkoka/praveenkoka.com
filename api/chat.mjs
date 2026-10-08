@@ -31,7 +31,43 @@ const EXERCISES = {
   jacks: "jumping jacks",
   jumprope: "skipping rope (mimed, there is no rope)",
 };
+const GUITAR_ANGLES = [
+  "you are headlining a sold-out stadium that only exists in your head",
+  "your solo is so fast the frame rate cannot keep up",
+  "you learned it all from one YouTube video at 2am",
+  "you are tuning by ear and your ear is wrong",
+  "this riff is dedicated to every failed deploy",
+  "the neighbours have already called to complain",
+  "it is a power ballad about technical debt",
+  "you are warming up for a world tour nobody booked",
+  "your guitar teacher would be quietly disappointed",
+  "you are channelling eighties hair metal despite having no hair",
+  "this is how you debug: loudly",
+  "the boombox is doing most of the work and you know it",
+  "you shred harder than your laptop fans",
+  "you will be signing autographs after the set, by appointment only",
+];
+const EXERCISE_ANGLES = [
+  "your aspirational muscles finally have to earn their keep",
+  "you are counting reps the way you estimate sprints, badly",
+  "you are doing this so the real Praveen does not have to",
+  "your personal trainer is a linter that only complains",
+  "you have never sweated before because you are made of polygons",
+  "this counts as your cardio for the quarter",
+  "you are negotiating the rep count down as you go",
+  "you are doing it for the screenshot, not the gains",
+  "the music is carrying this workout",
+  "you will mention this at every standup for a month",
+  "you are mostly here for the post-workout snack",
+  "you are doing it with perfect form, according to nobody",
+  "you skipped leg day for a decade and it shows",
+  "your physics engine is doing the heavy lifting",
+];
+const ANGLE_RULE = "Use a fresh joke: never mention that the guitar, rope or equipment is not real, and never reuse a line from earlier in the conversation.";
 const DANCE_RE = /\b(danc\w*|boogie|groove|bust a move|moves|twerk|shake it|celebrate|party)\b/i;
+const GUITAR_RE = /\b(guitar|shred\w*|riff\w*|rock out|solo)\b/i;
+const EXERCISE_RE = /\b(exercis\w*|work ?out|push[- ]?ups?|pushups?|squats?|jumping[- ]?jacks?|skip\w*|jump[- ]?rope|gym|lift\w*|cardio|run|sweat)\b/i;
+const pick = (a) => a[Math.floor(Math.random() * a.length)];
 
 // Best-effort per-instance rate limit: 50 requests per IP per 10 minutes.
 const WINDOW = 10 * 60 * 1000, LIMIT = 50;
@@ -50,11 +86,23 @@ export const RATE_LIMITED = {
   "429-2": "That's a 429, you've hit the rate limit. It means the server has decided you've had enough of me for now. Shocking, I know. Come back in a few minutes.",
   "429-3": "That's a 429, you've hit the rate limit. Think of it as a bouncer for computers, and you've been talking a lot. Give it a few minutes.",
 };
+export const RATE_LIMITED_GUITAR = {
+  "429-guitar-1": "That's a 429, you've hit the rate limit. Too many requests, too fast. So here's an encore while the server cools off.",
+  "429-guitar-2": "That's a 429, you've hit the rate limit. The server stopped listening to you, but it can't stop me shredding.",
+  "429-guitar-3": "That's a 429, you've hit the rate limit. Translation: you talk too much. This solo is for you while you wait.",
+};
+export const RATE_LIMITED_EXERCISE = {
+  "429-exercise-1": "That's a 429, you've hit the rate limit. You asked too much, too fast, so the server benched you. I'm getting my reps in anyway.",
+  "429-exercise-2": "That's a 429, you've hit the rate limit. It's like a gym closing time, but for chatting. Cool down for a few minutes.",
+  "429-exercise-3": "That's a 429, you've hit the rate limit. The server needs a rest day, and frankly so do I. Back in a few minutes.",
+};
 export const RATE_LIMITED_DANCE = {
   "429-dance-1": "That's a 429, you've hit the rate limit, which means you asked too many times too fast. I'm dancing anyway, purely out of pity.",
   "429-dance-2": "That's a 429, you've hit the rate limit. The server says no more requests, but it never said no more dancing.",
   "429-dance-3": "That's a 429, you've hit the rate limit. Fancy talk for too many messages, too fast. Here's a consolation dance while you wait.",
 };
+// the exercise the visitor asked for by name, if any
+const namedExercise = (q) => [[/push[- ]?ups?|pushups/i, "pushup"], [/squats?/i, "squat"], [/jumping[- ]?jacks?|star jumps?/i, "jacks"], [/skip|jump[- ]?rope/i, "jumprope"]].find(([re]) => re.test(q))?.[1];
 const pickKey = (o) => { const k = Object.keys(o); return k[Math.floor(Math.random() * k.length)]; };
 
 export default async function handler(req, res) {
@@ -62,8 +110,12 @@ export default async function handler(req, res) {
   const ip = (req.headers["x-forwarded-for"] || "").split(",")[0].trim() || "local";
   if (limited(ip)) { // 200 so the page shows it like any other reply, and plays the matching clip
     const last = Array.isArray(req.body?.messages) ? String(req.body.messages.at(-1)?.text || "") : "";
-    const set = DANCE_RE.test(last) ? RATE_LIMITED_DANCE : RATE_LIMITED, clip = pickKey(set);
-    return res.status(200).json({ reply: set[clip], gesture: set === RATE_LIMITED_DANCE ? "dance" : "none", clip, rateLimited: true });
+    const [set, gesture] = DANCE_RE.test(last) ? [RATE_LIMITED_DANCE, "dance"]
+      : GUITAR_RE.test(last) ? [RATE_LIMITED_GUITAR, "guitar"]
+      : EXERCISE_RE.test(last) ? [RATE_LIMITED_EXERCISE, namedExercise(last) || pickKey(EXERCISES)]
+      : [RATE_LIMITED, "none"];
+    const clip = pickKey(set);
+    return res.status(200).json({ reply: set[clip], gesture, clip, rateLimited: true });
   }
 
   // ~60-token cap per visitor message (240 chars), matching the page; model turns are already short
@@ -87,9 +139,7 @@ export default async function handler(req, res) {
     return res.status(200).json({ reply, gesture: "none", outOfTokens: true });
   }
 
-  // a named exercise wins; otherwise pick one at random
-  const named = [[/push[- ]?ups?|pushups/i, "pushup"], [/squats?/i, "squat"], [/jumping[- ]?jacks?|star jumps?/i, "jacks"], [/skip|jump[- ]?rope|skipping/i, "jumprope"]].find(([re]) => re.test(question));
-  const exercise = named ? named[1] : pickKey(EXERCISES);
+  const exercise = namedExercise(question) || pickKey(EXERCISES); // a named exercise wins; otherwise random
   try {
     const r = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${process.env.GEMINI_API_KEY}`,
@@ -97,9 +147,14 @@ export default async function handler(req, res) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          systemInstruction: { parts: [{ text: `${PERSONA}\n\nFor this reply only: if you exercise, the exercise you are doing is ${EXERCISES[exercise]}, so talk about doing exactly that.${DANCE_RE.test(question)
-            ? ` If you dance, build the joke around this idea (in your own words): ${DANCE_ANGLES[Math.floor(Math.random() * DANCE_ANGLES.length)]}.`
-            : ""}` }] },
+          systemInstruction: { parts: [{ text: [
+            PERSONA,
+            `For this reply only: if you exercise, the exercise you are doing is ${EXERCISES[exercise]}, so talk about doing exactly that.`,
+            // a random comedic angle per request, so repeat requests (and new visitors) hear different jokes
+            DANCE_RE.test(question) && `If you dance, build the joke around this idea (in your own words): ${pick(DANCE_ANGLES)}. ${ANGLE_RULE}`,
+            GUITAR_RE.test(question) && `If you play air guitar, build the joke around this idea (in your own words): ${pick(GUITAR_ANGLES)}. ${ANGLE_RULE}`,
+            EXERCISE_RE.test(question) && `If you exercise, build the joke around this idea (in your own words): ${pick(EXERCISE_ANGLES)}. ${ANGLE_RULE}`,
+          ].filter(Boolean).join("\n\n") }] },
           contents,
           generationConfig: {
             temperature: 0.9,

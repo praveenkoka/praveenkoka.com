@@ -1,11 +1,13 @@
 // Pre-records the canned rate-limit replies in the avatar's Murf voice.
 // node --env-file=.env.local scripts/gen-429.mjs  ->  public/talk/assets/429/{id}.mp3
 import { writeFileSync, mkdirSync } from "node:fs";
-import { RATE_LIMITED, RATE_LIMITED_DANCE } from "../api/chat.mjs";
+import { RATE_LIMITED, RATE_LIMITED_DANCE, RATE_LIMITED_GUITAR, RATE_LIMITED_EXERCISE } from "../api/chat.mjs";
 
 const dir = new URL("../public/talk/assets/429/", import.meta.url);
 mkdirSync(dir, { recursive: true });
-for (const [id, text] of Object.entries({ ...RATE_LIMITED, ...RATE_LIMITED_DANCE })) {
+const only = process.argv[2] ? new RegExp(process.argv[2]) : null; // e.g. "guitar|exercise" to record just those
+for (const [id, text] of Object.entries({ ...RATE_LIMITED, ...RATE_LIMITED_DANCE, ...RATE_LIMITED_GUITAR, ...RATE_LIMITED_EXERCISE })) {
+  if (only && !only.test(id)) continue;
   const r = await fetch("https://global.api.murf.ai/v1/speech/stream", {
     method: "POST",
     headers: { "Content-Type": "application/json", "api-key": process.env.MURF_API_KEY },
