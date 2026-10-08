@@ -2,7 +2,7 @@ import * as THREE from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { MeshoptDecoder } from "three/addons/libs/meshopt_decoder.module.js";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
-import { GroundedSkybox } from "three/addons/objects/GroundedSkybox.js";
+import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
 import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
 import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
@@ -25,38 +25,56 @@ renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x0b0f2a);
 const pmrem = new THREE.PMREMGenerator(renderer);
-scene.environmentIntensity = 0.75;
+scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+scene.environmentIntensity = 0.35;
 
 const camera = new THREE.PerspectiveCamera(32, 1, 0.1, 300);
 
-/* ============ Gemini-generated 360° world ============ */
-// An equirectangular panorama, projected onto the ground near the avatar so you can walk all the way round.
-const WORLD_YAW = Number(params.get("yaw") ?? 4.2); // turns the panorama so the skyline sits behind him at the start
-const SHOT_HEIGHT = 1.6, WORLD_RADIUS = 70;
-// sharper panorama where the GPU allows it; 4096 px is the safe limit on phones
-const WORLD_URL = renderer.capabilities.maxTextureSize >= 8192 && Math.min(screen.width, screen.height) >= 700 ? "/talk/assets/world360-hd.jpg" : "/talk/assets/world360.jpg";
-new THREE.TextureLoader().load(WORLD_URL, (tex) => {
-  tex.colorSpace = THREE.SRGBColorSpace;
-  tex.mapping = THREE.EquirectangularReflectionMapping;
-  scene.environment = pmrem.fromEquirectangular(tex).texture; // the world lights the avatar
-  scene.environmentRotation.y = WORLD_YAW;
-  const sky = new GroundedSkybox(tex, SHOT_HEIGHT, WORLD_RADIUS);
-  sky.position.y = SHOT_HEIGHT - 0.01;
-  sky.rotation.y = WORLD_YAW;
-  scene.add(sky);
-});
+/* ============ Gemini-generated world, wrapped all the way round ============ */
+// The 21:9 rooftop image fills half the circle; a mirrored copy fills the other half,
+// so the edges always meet and you can swivel 360 degrees without a gap.
+const IMG_ASPECT = 3168 / 1344;
+const R = 34;
+const BH = (R * Math.PI) / IMG_ASPECT; // each copy spans half the circumference
+const backdropTex = new THREE.TextureLoader().load("/talk/assets/world.jpg", (t) => { t.colorSpace = THREE.SRGBColorSpace; });
+backdropTex.colorSpace = THREE.SRGBColorSpace;
+backdropTex.wrapS = THREE.MirroredRepeatWrapping;
+backdropTex.repeat.x = -2;
+backdropTex.offset.x = 0.5; // image centre directly behind him from the starting view
+const backdrop = new THREE.Mesh(
+  new THREE.CylinderGeometry(R, R, BH, 160, 1, true, Math.PI, Math.PI * 2),
+  new THREE.MeshBasicMaterial({ map: backdropTex, side: THREE.BackSide, toneMapped: false })
+);
+// image horizon (45% from the top) at eye height, so the terrace floor in the picture lands behind his feet
+backdrop.position.set(0, 1.35 - 0.05 * BH + 2.6, 0);
+scene.add(backdrop);
+
+// a dark glossy floor under him that fades out into the terrace in the picture
+const floorFade = (() => {
+  const c = document.createElement("canvas"); c.width = c.height = 256;
+  const g = c.getContext("2d"), grd = g.createRadialGradient(128, 128, 0, 128, 128, 128);
+  grd.addColorStop(0, "#fff"); grd.addColorStop(0.35, "#fff"); grd.addColorStop(1, "#000");
+  g.fillStyle = grd; g.fillRect(0, 0, 256, 256);
+  return new THREE.CanvasTexture(c);
+})();
+const floor = new THREE.Mesh(
+  new THREE.CircleGeometry(7, 96),
+  new THREE.MeshStandardMaterial({ color: 0x06070f, metalness: 0, roughness: 0.9, envMapIntensity: 0.1, transparent: true, opacity: 0.92, alphaMap: floorFade, depthWrite: false })
+);
+floor.rotation.x = -Math.PI / 2; floor.position.y = -0.045; floor.receiveShadow = true;
+scene.add(floor);
 
 /* ============ lights ============ */
-scene.add(new THREE.HemisphereLight(0x7f8cff, 0x2a1810, 0.35));
-const key = new THREE.DirectionalLight(0xffd6ad, 1.9);
+scene.add(new THREE.HemisphereLight(0x7f8cff, 0x2a1810, 0.9));
+const key = new THREE.DirectionalLight(0xffd6ad, 2.4);
 key.position.set(2.2, 4.2, 3.4);
 key.castShadow = true;
 key.shadow.mapSize.set(1024, 1024);
 key.shadow.camera.left = -2; key.shadow.camera.right = 2; key.shadow.camera.top = 3; key.shadow.camera.bottom = -1;
 key.shadow.bias = -0.0005;
 scene.add(key);
-const rimL = new THREE.DirectionalLight(0xff4fa3, 1.6); rimL.position.set(-3, 2.6, -2.5); scene.add(rimL);
-const rimR = new THREE.DirectionalLight(0xffa040, 1.3); rimR.position.set(3, 2.2, -2.5); scene.add(rimR);
+const rimL = new THREE.DirectionalLight(0xff4fa3, 2.2); rimL.position.set(-3, 2.6, -2.5); scene.add(rimL);
+const rimR = new THREE.DirectionalLight(0xffa040, 1.8); rimR.position.set(3, 2.2, -2.5); scene.add(rimR);
 const fill = new THREE.PointLight(0xbfc8ff, 0.8, 8); fill.position.set(-1.2, 1.6, 2.5); scene.add(fill);
 
 /* ============ pedestal ============ */
@@ -76,12 +94,12 @@ pedestal.add(ring1, ring2);
 scene.add(pedestal);
 
 /* ============ drifting particles ============ */
-const N = 420;
+const N = 320;
 const pGeo = new THREE.BufferGeometry();
 const pos = new Float32Array(N * 3), col = new Float32Array(N * 3), speed = new Float32Array(N);
 const palette = [new THREE.Color(1.6, 0.85, 0.45), new THREE.Color(1.5, 0.45, 0.95), new THREE.Color(0.8, 0.85, 1.6)];
 for (let i = 0; i < N; i++) {
-  const r = 1.4 + Math.random() * 8, a = Math.random() * Math.PI * 2;
+  const r = 1.4 + Math.random() * 6, a = Math.random() * Math.PI * 2;
   pos.set([Math.cos(a) * r, Math.random() * 4, Math.sin(a) * r], i * 3);
   col.set(palette[i % 3].toArray(), i * 3);
   speed[i] = 0.05 + Math.random() * 0.12;
@@ -99,17 +117,23 @@ composer.addPass(bloom);
 composer.addPass(new OutputPass());
 
 const controls = new OrbitControls(camera, canvas);
-controls.enablePan = false;
+controls.enablePan = true;
+controls.screenSpacePanning = true;
+controls.panSpeed = 0.6;
 controls.enableDamping = true;
 controls.dampingFactor = 0.08;
 controls.rotateSpeed = 0.6;
 controls.zoomSpeed = 0.7;
-controls.minDistance = 1.8;
-controls.maxDistance = 7;
-controls.minPolarAngle = THREE.MathUtils.degToRad(48); // a little from above
-controls.maxPolarAngle = THREE.MathUtils.degToRad(93); // never below the floor
+controls.minDistance = 2.2;
+controls.maxDistance = 11;
+controls.minPolarAngle = THREE.MathUtils.degToRad(55); // a little from above
+controls.maxPolarAngle = THREE.MathUtils.degToRad(91); // never below the floor
 controls.autoRotateSpeed = 0.35;
 controls.enabled = !SNAPSHOT;
+
+// panning is kept to a box around him so he never leaves the frame
+const PAN_MIN = new THREE.Vector3(-1.6, 0.35, -1.6), PAN_MAX = new THREE.Vector3(1.6, 1.8, 1.6);
+controls.addEventListener("change", () => { controls.target.clamp(PAN_MIN, PAN_MAX); });
 
 let lastInteraction = performance.now();
 controls.addEventListener("start", () => { lastInteraction = performance.now(); controls.autoRotate = false; $("hint")?.classList.add("gone"); });
@@ -118,8 +142,12 @@ controls.addEventListener("end", () => { lastInteraction = performance.now(); })
 function frame() {
   const portrait = camera.aspect < 0.8;
   if (SNAPSHOT) { camera.fov = 12; camera.position.set(0, 1.66, 4.6); controls.target.set(0, 1.56, 0); }
-  else if (portrait) { camera.fov = 58; camera.position.set(0, 1.35, 4.0); controls.target.set(0, 0.72, 0); }
-  else { camera.fov = 50; camera.position.set(0, 1.45, 3.5); controls.target.set(0, 0.95, 0); }
+  else if (portrait) { camera.fov = 40; camera.position.set(0, 1.3, 5.6); controls.target.set(0, 0.62, 0); }
+  else { camera.fov = 32; camera.position.set(0, 1.45, 5.6); controls.target.set(0, 0.92, 0); }
+  if (params.has("az")) { // test hook: start the camera at a given swivel angle (radians)
+    const off = camera.position.clone().sub(controls.target).applyAxisAngle(new THREE.Vector3(0, 1, 0), Number(params.get("az")));
+    camera.position.copy(controls.target).add(off);
+  }
   camera.updateProjectionMatrix();
   controls.update();
 }
@@ -128,7 +156,7 @@ function resize() {
   renderer.setSize(w, h, false);
   composer.setSize(w, h);
   camera.aspect = w / h;
-  camera.fov = SNAPSHOT ? 12 : camera.aspect < 0.8 ? 58 : 50;
+  camera.fov = SNAPSHOT ? 12 : camera.aspect < 0.8 ? 40 : 32;
   camera.updateProjectionMatrix();
 }
 window.addEventListener("resize", resize);
