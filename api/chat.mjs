@@ -4,8 +4,8 @@ import { checkBudget, recordSpend, chatCost, outOfTokens, hoursToPacificMidnight
 import { logExchange } from "./_chatlog.mjs";
 
 const MODEL = process.env.CHAT_MODEL || "gemini-3.5-flash-lite";
-const GESTURES = ["none", "nod", "acknowledge", "dance", "salute", "dismiss", "jumprope"];
-const WORLDS = ["none", "berlin", "gym", "office", "studio"]; // places the topic can take him (see the persona)
+const GESTURES = ["none", "nod", "acknowledge", "dance", "salute", "dismiss", "exercise", "guitar"];
+const WORLDS = ["none", "berlin", "gym", "office", "studio", "court"]; // places the topic can take him (see the persona)
 
 // Dance requests get a random comedic angle so repeat requests (and new visitors) hear different jokes.
 const DANCE_ANGLES = [
@@ -24,6 +24,13 @@ const DANCE_ANGLES = [
   "you are treating it like a reluctant all-hands demo",
   "you are billing this as unpaid overtime",
 ];
+// Exercise requests: the server picks the exercise up front so his words can match the animation.
+const EXERCISES = {
+  pushup: "push-ups",
+  squat: "air squats",
+  jacks: "jumping jacks",
+  jumprope: "skipping rope (mimed, there is no rope)",
+};
 const DANCE_RE = /\b(danc\w*|boogie|groove|bust a move|moves|twerk|shake it|celebrate|party)\b/i;
 
 // Best-effort per-instance rate limit: 50 requests per IP per 10 minutes.
@@ -80,6 +87,9 @@ export default async function handler(req, res) {
     return res.status(200).json({ reply, gesture: "none", outOfTokens: true });
   }
 
+  // a named exercise wins; otherwise pick one at random
+  const named = [[/push[- ]?ups?|pushups/i, "pushup"], [/squats?/i, "squat"], [/jumping[- ]?jacks?|star jumps?/i, "jacks"], [/skip|jump[- ]?rope|skipping/i, "jumprope"]].find(([re]) => re.test(question));
+  const exercise = named ? named[1] : pickKey(EXERCISES);
   try {
     const r = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${process.env.GEMINI_API_KEY}`,
@@ -87,9 +97,9 @@ export default async function handler(req, res) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          systemInstruction: { parts: [{ text: DANCE_RE.test(question)
-            ? `${PERSONA}\n\nFor this reply only, if you dance, build the joke around this idea (in your own words): ${DANCE_ANGLES[Math.floor(Math.random() * DANCE_ANGLES.length)]}.`
-            : PERSONA }] },
+          systemInstruction: { parts: [{ text: `${PERSONA}\n\nFor this reply only: if you exercise, the exercise you are doing is ${EXERCISES[exercise]}, so talk about doing exactly that.${DANCE_RE.test(question)
+            ? ` If you dance, build the joke around this idea (in your own words): ${DANCE_ANGLES[Math.floor(Math.random() * DANCE_ANGLES.length)]}.`
+            : ""}` }] },
           contents,
           generationConfig: {
             temperature: 0.9,
@@ -116,7 +126,8 @@ export default async function handler(req, res) {
     const raw = data.candidates?.[0]?.content?.parts?.map((p) => p.text || "").join("") || "";
     const out = JSON.parse(raw);
     const reply = String(out.reply || "").replace(/—/g, ", ").trim().slice(0, 400);
-    const gesture = GESTURES.includes(out.gesture) ? out.gesture : "none";
+    let gesture = GESTURES.includes(out.gesture) ? out.gesture : "none";
+    if (gesture === "exercise") gesture = exercise; // the page plays the matching clip
     const world = WORLDS.includes(out.world) && out.world !== "none" ? out.world : undefined;
     if (!reply) throw new Error("empty reply: " + JSON.stringify(data).slice(0, 300));
     await Promise.all([spend, log(reply, gesture)]);

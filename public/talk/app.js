@@ -327,7 +327,7 @@ const manager = new THREE.LoadingManager();
 const loader = new GLTFLoader(manager);
 loader.setMeshoptDecoder(MeshoptDecoder);
 loader.load(
-  SNAPSHOT && params.get("glb") ? `/talk/assets/${params.get("glb").replace(/[^\w.-]/g, "")}` : "/talk/assets/bald_indian.glb?v=14",
+  SNAPSHOT && params.get("glb") ? `/talk/assets/${params.get("glb").replace(/[^\w.-]/g, "")}` : "/talk/assets/bald_indian.glb?v=15",
   (gltf) => {
     const avatar = gltf.scene;
     avatarRoot = avatar;
@@ -362,7 +362,7 @@ function play(name, fade = 0.35, randomStart = false) {
 const ONE_SHOTS = ["Acknowledging", "Head Nod Yes", "Waving", "Dismissing Gesture", "Salute"];
 const IDLES = ["Breathing Idle", "Offensive Idle"];
 const DANCES = ["Dancing", "Hip Hop Dancing", "Wave Hip Hop Dance"];
-let currentIdle = "Breathing Idle", currentDance = null, jumpingUntil = 0;
+let currentIdle = "Breathing Idle", currentDance = null, jumpingUntil = 0, actionClip = "Jumping Rope"; // jumpingUntil: an exercise or air guitar is playing
 let nextIdleChange = performance.now() + 9000;
 
 let talkFlip = false;
@@ -371,7 +371,7 @@ const busyBody = () => dancingUntil > performance.now() || jumpingUntil > perfor
 function settle() {
   const now = performance.now();
   if (dancingUntil > now) play(currentDance, 0.4);
-  else if (jumpingUntil > now) play("Jumping Rope", 0.35);
+  else if (jumpingUntil > now) play(actionClip, 0.35);
   else if (speaking) play(talkClip());
   else play(currentIdle, 0.5);
 }
@@ -587,25 +587,31 @@ function stopSpeaking() {
 /* ============ music for the boombox ============ */
 // A random slice of one of two trap beats, sized to the action, fading in and out.
 // It plays at a solid level but ducks under his voice, and never feeds the lip-sync analyser.
-const TRACKS = ["/talk/assets/music/trap-1.mp3", "/talk/assets/music/trap-2.mp3"];
+const TRACKS = {
+  hiphop: ["/talk/assets/music/trap-1.mp3", "/talk/assets/music/trap-2.mp3"],
+  metal: ["/talk/assets/music/metal-1.mp3", "/talk/assets/music/metal-2.mp3"],
+};
 const MUSIC_LEVEL = 0.5, MUSIC_DUCKED = 0.2;
 const trackBufs = {};
-let trackTurn = Math.floor(Math.random() * TRACKS.length), musicGain = null, musicAnalyser = null, musicData = null, music = null, musicTargetNow = -1;
+const trackTurn = { hiphop: Math.floor(Math.random() * 2), metal: Math.floor(Math.random() * 2) };
+let musicGain = null, musicAnalyser = null, musicData = null, music = null, musicTargetNow = -1;
 const musicTarget = () => (muted ? 0 : speaking ? MUSIC_DUCKED : MUSIC_LEVEL);
 function loadTrack(url) {
   if (!trackBufs[url]) trackBufs[url] = fetch(url).then((r) => r.arrayBuffer()).then((b) => audioCtx.decodeAudioData(b));
   return trackBufs[url];
 }
-async function playMusic(ms) {
+async function playMusic(ms, genre) {
+  if (!TRACKS[genre]) genre = "hiphop";
   if (!audioCtx || muted) return;
   if (!musicGain) {
     musicGain = audioCtx.createGain(); musicGain.gain.value = 0;
     musicAnalyser = audioCtx.createAnalyser(); musicAnalyser.fftSize = 512; musicData = new Uint8Array(musicAnalyser.fftSize);
     musicGain.connect(musicAnalyser); musicAnalyser.connect(audioCtx.destination);
   }
-  trackTurn = (trackTurn + 1) % TRACKS.length;
+  const list = TRACKS[genre];
+  trackTurn[genre] = (trackTurn[genre] + 1) % list.length;
   let buf;
-  try { buf = await loadTrack(TRACKS[trackTurn]); } catch (e) { console.warn(e); return; }
+  try { buf = await loadTrack(list[trackTurn[genre]]); } catch (e) { console.warn(e); return; }
   stopMusic(0.1);
   const dur = Math.min(ms / 1000, buf.duration - 0.3);
   const offset = Math.random() * Math.max(0, buf.duration - dur - 0.2);
@@ -639,13 +645,13 @@ function musicLevel() {
   for (let i = 0; i < musicData.length; i++) { const v = (musicData[i] - 128) / 128; sum += v * v; }
   return Math.min(1, Math.sqrt(sum / musicData.length) * 3.5);
 }
-function boomboxOn(ms) {
+function boomboxOn(ms, genre) {
   const side = new THREE.Vector3(1.2, 0, 0.45).applyAxisAngle(UP, facing);
   boombox.position.set(side.x, 0.14, side.z);
   boombox.rotation.y = facing - 0.4;
   boombox.visible = true;
   boom = { start: performance.now(), end: performance.now() + ms };
-  playMusic(ms);
+  playMusic(ms, genre);
 }
 function tickBoombox(now) {
   if (!boom) return;
@@ -665,6 +671,14 @@ function faceVisitor() { facingTarget = Math.atan2(camera.position.x - controls.
 function lerpAngle(a, b, t) { const d = Math.atan2(Math.sin(b - a), Math.cos(b - a)); return a + d * t; }
 
 /* ============ gestures ============ */
+const EXERCISES = { pushup: "Push Up", squat: "Air Squat", jacks: "Jumping Jacks", jumprope: "Jumping Rope" };
+let exerciseGenre = Math.random() < 0.5 ? "metal" : "hiphop"; // exercise alternates hip hop and metal
+function startAction(clip, ms, genre) {
+  const now = performance.now();
+  dancingUntil = 0; actionClip = clip; jumpingUntil = now + ms;
+  play(clip, 0.35); setTimeout(settle, ms + 100);
+  boomboxOn(ms, genre);
+}
 function gesture(g) {
   faceVisitor();
   const now = performance.now();
@@ -676,10 +690,11 @@ function gesture(g) {
     const others = DANCES.filter((d) => d !== currentDance); // random, but never the same dance twice in a row
     currentDance = others[Math.floor(Math.random() * others.length)];
     jumpingUntil = 0; dancingUntil = now + 10000; play(currentDance, 0.4); setTimeout(settle, 10100);
-    boomboxOn(10000);
-  } else if (g === "jumprope") { // declining something physical, while doing something physical
-    dancingUntil = 0; jumpingUntil = now + 6000; play("Jumping Rope", 0.35); setTimeout(settle, 6100);
-    boomboxOn(6000);
+    boomboxOn(10000, "hiphop");
+  } else if (EXERCISES[g]) { // the server picked the exercise so his words match it
+    startAction(EXERCISES[g], 8000, exerciseGenre = exerciseGenre === "metal" ? "hiphop" : "metal");
+  } else if (g === "guitar") {
+    startAction("Guitar Playing", 9000, "metal");
   }
 }
 
@@ -838,6 +853,7 @@ function ready() {
     armIntro();
   }
   faceVisitor();
+  if (EXERCISES[params.get("demo")] || params.get("demo") === "guitar") { const d = params.get("demo"); gesture(d); boom.end += 120000; jumpingUntil += 120000; } // test hook
   if (params.get("demo") === "dance") { gesture("dance"); boom.end += 120000; dancingUntil += 120000; } // test hook: hold the dance and boombox for screenshots
 }
 

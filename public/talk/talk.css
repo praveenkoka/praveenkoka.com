@@ -59,7 +59,11 @@ button { font: inherit; color: inherit; cursor: pointer; }
 
 /* ask bar */
 .ask { position: fixed; left: 0; right: 0; margin: 0 auto; bottom: max(18px, env(safe-area-inset-bottom)); width: min(680px, calc(100% - 24px)); z-index: 5; }
-.chips { position: fixed; z-index: 5; right: max(20px, env(safe-area-inset-right)); bottom: calc(var(--ask-h, 96px) + max(18px, env(safe-area-inset-bottom)) + 10px); display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
+/* suggestion chips: "Fun" column on the left, "Work" column on the right */
+.chip-group { position: fixed; z-index: 5; bottom: calc(var(--ask-h, 96px) + max(18px, env(safe-area-inset-bottom)) + 10px); display: flex; flex-direction: column; gap: 8px; }
+.chip-group.work { right: max(20px, env(safe-area-inset-right)); align-items: flex-end; }
+.chip-group.fun { left: max(20px, env(safe-area-inset-left)); align-items: flex-start; }
+.chip-label { font-family: var(--font-d); font-size: 10.5px; letter-spacing: .16em; text-transform: uppercase; color: var(--mut); padding: 0 6px 2px; text-shadow: 0 1px 6px rgba(0,0,0,.6); }
 .chips button { font-family: var(--font-d); font-size: 13px; letter-spacing: 0.01em; padding: 8px 14px; border-radius: 999px; background: var(--glass); border: 1px solid var(--line); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); transition: border-color .2s, background .2s; }
 .chips button:hover { border-color: rgba(255,255,255,.5); background: rgba(20, 22, 44, .7); }
 .chips button:disabled { opacity: .4; cursor: default; }
@@ -110,8 +114,10 @@ button { font: inherit; color: inherit; cursor: pointer; }
 @media (min-width: 901px) { .caption { width: min(600px, calc(100vw - 600px)); } }
 /* narrow or short screens: chips become a scrolling row inside the input block, right above the bar */
 @media (max-width: 900px), (max-height: 720px) {
-  .chips { position: static; margin-bottom: 10px; flex-direction: row; flex-wrap: nowrap; overflow-x: auto; justify-content: flex-start; padding: 2px 2px 4px; scrollbar-width: none; }
+  .chips { margin-bottom: 10px; display: flex; flex-wrap: nowrap; gap: 14px; overflow-x: auto; padding: 2px 2px 4px; scrollbar-width: none; }
   .chips::-webkit-scrollbar { display: none; }
+  .chip-group { position: static; flex-direction: row; align-items: center !important; gap: 8px; flex: 0 0 auto; }
+  .chip-label { padding: 0 2px 0 4px; }
   .chips button { flex: 0 0 auto; }
 }
 @media (max-width: 640px) {
