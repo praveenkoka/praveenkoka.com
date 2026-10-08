@@ -232,7 +232,7 @@ const manager = new THREE.LoadingManager();
 const loader = new GLTFLoader(manager);
 loader.setMeshoptDecoder(MeshoptDecoder);
 loader.load(
-  SNAPSHOT && params.get("glb") ? `/talk/assets/${params.get("glb").replace(/[^\w.-]/g, "")}` : "/talk/assets/bald_indian.glb",
+  SNAPSHOT && params.get("glb") ? `/talk/assets/${params.get("glb").replace(/[^\w.-]/g, "")}` : "/talk/assets/bald_indian.glb?v=14",
   (gltf) => {
     const avatar = gltf.scene;
     avatarRoot = avatar;
@@ -245,7 +245,7 @@ loader.load(
     scene.add(avatar);
     mixer = new THREE.AnimationMixer(avatar);
     for (const clip of gltf.animations) actions[clip.name] = mixer.clipAction(clip);
-    for (const n of ["Acknowledging", "Head Nod Yes", "Waving"]) {
+    for (const n of ONE_SHOTS) {
       if (actions[n]) { actions[n].setLoop(THREE.LoopOnce, 1); actions[n].clampWhenFinished = true; }
     }
     mixer.addEventListener("finished", onClipFinished);
@@ -264,10 +264,35 @@ function play(name, fade = 0.35, randomStart = false) {
   if (current) current.fadeOut(fade);
   current = next;
 }
+const ONE_SHOTS = ["Acknowledging", "Head Nod Yes", "Waving", "Dismissing Gesture", "Salute"];
+const IDLES = ["Breathing Idle", "Offensive Idle"];
+const DANCES = ["Dancing", "Hip Hop Dancing", "Wave Hip Hop Dance"];
+let currentIdle = "Breathing Idle", danceIndex = -1, currentDance = DANCES[0], jumpingUntil = 0;
+let nextIdleChange = performance.now() + 9000;
+
 let talkFlip = false;
 function talkClip() { talkFlip = !talkFlip; return talkFlip ? "Talking" : "Talking 2"; }
-function settle() { play(speaking ? talkClip() : dancingUntil > performance.now() ? "Dancing" : "Breathing Idle"); }
+const busyBody = () => dancingUntil > performance.now() || jumpingUntil > performance.now();
+function settle() {
+  const now = performance.now();
+  if (dancingUntil > now) play(currentDance, 0.4);
+  else if (jumpingUntil > now) play("Jumping Rope", 0.35);
+  else if (speaking) play(talkClip());
+  else play(currentIdle, 0.5);
+}
 function onClipFinished() { settle(); }
+
+// Idle life: alternate breathing and the guarded "offensive" idle at random, with the odd
+// mimed jump-rope session or dismissive wave so he never looks frozen.
+function directIdle(now) {
+  if (SNAPSHOT || speaking || busy || busyBody() || now < nextIdleChange || !current) return;
+  if (!IDLES.includes(current.getClip().name)) return; // let one-shots finish first
+  nextIdleChange = now + 8000 + Math.random() * 7000;
+  const r = Math.random();
+  if (r < 0.12) { jumpingUntil = now + 4000 + Math.random() * 2000; play("Jumping Rope", 0.4); setTimeout(settle, jumpingUntil - now + 50); }
+  else if (r < 0.2) play("Dismissing Gesture", 0.35);
+  else { currentIdle = Math.random() < 0.6 ? IDLES.find((n) => n !== currentIdle) : currentIdle; play(currentIdle, 0.6); }
+}
 
 // While he speaks: alternate the two talking clips at (estimated) sentence breaks, switch anyway
 // before a clip visibly loops, and slip in at most one nod or acknowledgement per answer.
@@ -286,13 +311,14 @@ function switchTalk(atBreak) {
   talkPlan.lastSwitch = elapsed;
   if (atBreak && !talkPlan.gestured && Math.random() < 0.3) {
     talkPlan.gestured = true;
-    play(Math.random() < 0.5 ? "Head Nod Yes" : "Acknowledging", 0.3); // returns to talking when it finishes
+    const r = Math.random();
+    play(r < 0.4 ? "Head Nod Yes" : r < 0.8 ? "Acknowledging" : "Dismissing Gesture", 0.3); // returns to talking when it finishes
     return;
   }
   play(talkClip(), 0.45, true);
 }
 function directTalk() {
-  if (!speaking || !talkPlan || dancingUntil > performance.now() || !current) return;
+  if (!speaking || !talkPlan || busyBody() || !current) return;
   const name = current.getClip().name;
   if (!/^Talking/.test(name)) return; // let gestures finish
   const elapsed = (performance.now() - talkPlan.start) / 1000;
@@ -445,8 +471,8 @@ function startTalking() {
   speaking = true;
   planTalk(speechText);
   faceVisitor();
-  if (dancingUntil > performance.now()) return;
-  if (!current || !/Waving|Nod|Acknowledging/.test(current.getClip().name)) play(talkClip());
+  if (busyBody()) return;
+  if (!current || !ONE_SHOTS.includes(current.getClip().name)) play(talkClip());
 }
 function stopTalking() { speaking = false; mode = null; talkPlan = null; clearTargets(); settle(); }
 function stopSpeaking() {
@@ -464,9 +490,17 @@ function lerpAngle(a, b, t) { const d = Math.atan2(Math.sin(b - a), Math.cos(b -
 /* ============ gestures ============ */
 function gesture(g) {
   faceVisitor();
+  const now = performance.now();
   if (g === "nod") play("Head Nod Yes", 0.25);
   else if (g === "acknowledge") play("Acknowledging", 0.25);
-  else if (g === "dance") { dancingUntil = performance.now() + 9000; play("Dancing", 0.4); setTimeout(settle, 9100); }
+  else if (g === "salute") play("Salute", 0.25);
+  else if (g === "dismiss") play("Dismissing Gesture", 0.25);
+  else if (g === "dance") { // a different dance each time
+    danceIndex = (danceIndex + 1) % DANCES.length; currentDance = DANCES[danceIndex];
+    jumpingUntil = 0; dancingUntil = now + 10000; play(currentDance, 0.4); setTimeout(settle, 10100);
+  } else if (g === "jumprope") { // declining something physical, while doing something physical
+    dancingUntil = 0; jumpingUntil = now + 6000; play("Jumping Rope", 0.35); setTimeout(settle, 6100);
+  }
 }
 
 /* ============ chat (persisted per browser) ============ */
@@ -633,6 +667,7 @@ renderer.setAnimationLoop(() => {
   }
 
   directTalk();
+  directIdle(now);
   if (speaking && mode === "audio" && analyser) audioVisemes();
   else if (speaking && mode === "text") textVisemes(now);
   else clearTargets();

@@ -12,7 +12,7 @@
   var warmed = false;
   function warm() {
     if (warmed) return; warmed = true;
-    var l = document.createElement("link"); l.rel = "prefetch"; l.href = "/talk/assets/bald_indian.glb"; document.head.appendChild(l);
+    var l = document.createElement("link"); l.rel = "prefetch"; l.href = "/talk/assets/bald_indian.glb?v=14"; document.head.appendChild(l);
   }
   orb.addEventListener("pointerenter", warm);
   orb.addEventListener("focus", warm);
