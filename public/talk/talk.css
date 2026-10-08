@@ -60,6 +60,8 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .lede { margin: 18px auto 0; max-width: 420px; color: var(--mut); font-size: 16px; line-height: 1.55; }
 .progress { margin: 28px auto 0; width: 220px; height: 2px; border-radius: 2px; background: rgba(255,255,255,.12); overflow: hidden; }
 .progress span { display: block; height: 100%; width: 0; background: var(--grad); transition: width .2s; }
+.top-actions { display: flex; gap: 10px; }
+.status { margin-top: 18px; font-family: var(--font-d); font-size: 14px; letter-spacing: .04em; color: var(--mut); }
 .start { margin-top: 22px; height: 52px; padding: 0 30px; border-radius: 999px; border: 0; font-family: var(--font-d); font-size: 16px; font-weight: 500; letter-spacing: .02em; background: #f4f4f2; color: #0b0b0b; transition: transform .15s, opacity .2s; }
 .start:disabled { opacity: .5; cursor: default; }
 .start:not(:disabled):hover { transform: translateY(-1px); }
@@ -73,3 +75,5 @@ button { font: inherit; color: inherit; cursor: pointer; }
   .back { padding: 6px; }
 }
 @media (prefers-reduced-motion: reduce) { .dots span { animation: none; opacity: .6; } }
+
+[hidden] { display: none !important; }

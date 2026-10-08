@@ -36,9 +36,14 @@
 
   <header class="top">
     <a class="back" href="/"><img src="/assets/img/portrait-96.jpg" alt="" width="96" height="96"><span>praveenkoka.com</span></a>
+    <div class="top-actions">
+    <button id="reset" class="icon-btn" aria-label="Start a new chat" title="New chat" hidden>
+      <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg>
+    </button>
     <button id="mute" class="icon-btn" aria-label="Mute voice" aria-pressed="false" title="Mute">
       <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4z"/><path class="wave" d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/><path class="x" d="m16 9 6 6m0-6-6 6"/></svg>
     </button>
+    </div>
   </header>
 
   <div id="caption" class="caption" aria-live="polite"><p class="q" id="cap-q"></p><p class="a" id="cap-a"></p></div>
@@ -70,7 +75,7 @@
       <h1>Talk to Praveen</h1>
       <p class="lede">Builder. Applied AI. AI research. Ask the 3D version anything about the work. Short answers, guaranteed.</p>
       <div class="progress" aria-hidden="true"><span id="bar"></span></div>
-      <button id="start" class="start" disabled>Loading&hellip;</button>
+      <p id="intro-status" class="status">Loading the rooftop&hellip;</p>
     </div>
   </div>
 

@@ -140,7 +140,7 @@ loader.load(
     ready();
   },
   (e) => { if (e.total) $("bar").style.width = `${Math.round((e.loaded / e.total) * 100)}%`; },
-  (err) => { console.error(err); $("start").textContent = "Couldn't load the avatar"; }
+  (err) => { console.error(err); $("intro-status").textContent = "Couldn't load the avatar. Try refreshing."; }
 );
 
 function play(name, fade = 0.35) {
@@ -337,8 +337,15 @@ function gesture(g) {
   else if (g === "dance") { dancingUntil = performance.now() + 9000; play("Dancing", 0.4); setTimeout(settle, 9100); }
 }
 
-/* ============ chat ============ */
-const history = [];
+/* ============ chat (persisted per browser) ============ */
+const STORE = "pk-talk-v1";
+const store = {
+  load() { try { return JSON.parse(localStorage.getItem(STORE)) || {}; } catch { return {}; } },
+  save(data) { try { localStorage.setItem(STORE, JSON.stringify(data)); } catch {} },
+};
+const saved = store.load();
+const history = Array.isArray(saved.history) ? saved.history.filter((m) => m && typeof m.text === "string").slice(-30) : [];
+function persist() { store.save({ history: history.slice(-30), muted }); }
 const capQ = $("cap-q"), capA = $("cap-a");
 let busy = false;
 
@@ -351,11 +358,13 @@ function setBusy(b) {
 async function ask(question) {
   question = question.trim();
   if (!question || busy) return;
+  ensureAudio();
   setBusy(true);
   stopSpeaking(); settle();
   capQ.textContent = `"${question}"`;
   capA.innerHTML = '<span class="dots"><span></span><span></span><span></span></span>';
   history.push({ role: "user", text: question });
+  $("reset").hidden = false;
   let reply = "Hmm, I lost my train of thought. Try again?", g = "none";
   try {
     const r = await fetch("/api/chat/", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ messages: history.slice(-8) }) });
@@ -363,6 +372,7 @@ async function ask(question) {
     if (d.reply) { reply = d.reply; g = d.gesture || "none"; }
   } catch (e) { console.warn(e); }
   history.push({ role: "model", text: reply });
+  persist();
   capA.textContent = reply;
   gesture(g);
   setBusy(false);
@@ -379,6 +389,7 @@ $("mute").addEventListener("click", () => {
   $("mute").setAttribute("aria-pressed", String(muted));
   $("mute").setAttribute("aria-label", muted ? "Unmute voice" : "Mute voice");
   if (muted) stopSpeaking(), settle();
+  persist();
 });
 
 // voice input where the browser supports it
@@ -389,28 +400,47 @@ if (SR) {
   let listening = false;
   rec.onresult = (e) => { const t = Array.from(e.results).map((r) => r[0].transcript).join(""); $("q").value = t; if (e.results[e.results.length - 1].isFinal) { $("q").value = ""; ask(t); } };
   rec.onend = () => { listening = false; mic.classList.remove("on"); };
-  mic.addEventListener("click", () => { if (busy) return; if (listening) { rec.stop(); return; } stopSpeaking(); listening = true; mic.classList.add("on"); rec.start(); });
+  mic.addEventListener("click", () => { ensureAudio(); if (busy) return; if (listening) { rec.stop(); return; } stopSpeaking(); listening = true; mic.classList.add("on"); rec.start(); });
 }
 
 /* ============ start ============ */
-function ready() {
-  const start = $("start");
-  start.disabled = false; start.textContent = "Say hi";
-  if (SNAPSHOT) { $("intro").classList.add("gone"); document.querySelectorAll(".top,.ask,.caption").forEach((e) => (e.style.display = "none")); }
-  if (params.has("autostart")) start.click();
-}
-$("start").addEventListener("click", async () => {
+// Audio can only start after a user gesture, so it is created on the first question (or mic tap).
+function ensureAudio() {
+  if (audioCtx) { if (audioCtx.state === "suspended") audioCtx.resume(); return; }
   audioCtx = new (window.AudioContext || window.webkitAudioContext)();
   analyser = audioCtx.createAnalyser(); analyser.fftSize = 1024; analyser.smoothingTimeConstant = 0.5;
   freq = new Uint8Array(analyser.frequencyBinCount); timeBuf = new Uint8Array(analyser.fftSize);
   analyser.connect(audioCtx.destination);
+}
+
+const HELLO = "Hey, I'm Praveen. Well, the 3D version. Ask me about AI, startups, or what I'm building.";
+function ready() {
   $("intro").classList.add("gone");
+  if (SNAPSHOT) { document.querySelectorAll(".top,.ask,.caption").forEach((e) => (e.style.display = "none")); return; }
   $("q").disabled = false;
-  const hi = "Hey, I'm Praveen. Well, the 3D version. Ask me about AI, startups, or what I'm building.";
-  capQ.textContent = ""; capA.textContent = hi;
-  history.push({ role: "model", text: hi });
+  if (saved.muted) { muted = true; $("mute").setAttribute("aria-pressed", "true"); $("mute").setAttribute("aria-label", "Unmute voice"); }
+  const lastUser = [...history].reverse().find((m) => m.role === "user");
+  const lastModel = [...history].reverse().find((m) => m.role === "model");
+  if (lastUser && lastModel) {
+    capQ.textContent = `Last time: "${lastUser.text}"`;
+    capA.textContent = "Welcome back! Pick up where we left off, or ask something new.";
+    $("reset").hidden = false;
+  } else {
+    capQ.textContent = "";
+    capA.textContent = HELLO;
+    if (!history.length) { history.push({ role: "model", text: HELLO }); persist(); }
+  }
   gesture("wave");
-  speak(hi);
+}
+
+$("reset").addEventListener("click", () => {
+  stopSpeaking(); settle();
+  history.length = 0;
+  history.push({ role: "model", text: HELLO });
+  persist();
+  capQ.textContent = ""; capA.textContent = HELLO;
+  $("reset").hidden = true;
+  gesture("wave");
 });
 
 /* ============ loop ============ */
