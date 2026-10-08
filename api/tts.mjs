@@ -1,4 +1,5 @@
-// POST /api/tts  { text }  ->  streamed 16-bit PCM (24 kHz mono).
+// POST /api/tts  { text }  ->  streamed 16-bit PCM (24 kHz mono), or 503 when the voice is unavailable.
+import { checkBudget, recordSpend, ttsCost } from "./_budget.mjs";
 // Murf Falcon when MURF_API_KEY is set (default), else Google Gemini TTS; mp3 from Sarvam when TTS_PROVIDER=sarvam.
 const PROVIDER = process.env.TTS_PROVIDER || (process.env.MURF_API_KEY ? "murf" : "google");
 const MURF_VOICE = process.env.MURF_VOICE || "en-US-wayne";
@@ -37,7 +38,7 @@ async function googleStream(text, res) {
   res.setHeader("Content-Type", "audio/L16;rate=24000;channels=1");
   res.setHeader("Cache-Control", "no-store");
   res.status(200);
-  let buf = "", odd = null;
+  let buf = "", odd = null, usage = null;
   for await (const chunk of r.body) {
     buf += Buffer.from(chunk).toString().replace(/\r/g, "");
     let i;
@@ -46,7 +47,9 @@ async function googleStream(text, res) {
       buf = buf.slice(i + 2);
       const line = ev.split("\n").find((l) => l.startsWith("data:"));
       if (!line) continue;
-      const part = JSON.parse(line.slice(5)).candidates?.[0]?.content?.parts?.find((p) => p.inlineData);
+      const evt = JSON.parse(line.slice(5));
+      if (evt.usageMetadata) usage = evt.usageMetadata;
+      const part = evt.candidates?.[0]?.content?.parts?.find((p) => p.inlineData);
       if (!part) continue;
       let pcm = Buffer.from(part.inlineData.data, "base64");
       if (odd) { pcm = Buffer.concat([odd, pcm]); odd = null; }
@@ -55,6 +58,7 @@ async function googleStream(text, res) {
     }
   }
   res.end();
+  if (usage) await recordSpend(ttsCost(usage));
 }
 
 // Murf Falcon streams a WAV; strip the header and forward the raw PCM as it arrives.
@@ -107,8 +111,13 @@ export default async function handler(req, res) {
   if (!text) return res.status(400).json({ error: "text required" });
 
   try {
+    // Murf (free plan) gates itself; a Murf error is reported, never retried on paid Google TTS
     if (useMurf) return await murfStream(text, res);
-    if (!useSarvam) return await googleStream(text, res);
+    if (!useSarvam) {
+      const budget = await checkBudget();
+      if (!budget.ok) return res.status(503).json({ error: "out of tokens", retryHours: budget.retryHours });
+      return await googleStream(text, res);
+    }
     const out = await sarvam(text);
     res.setHeader("Content-Type", out.type);
     res.setHeader("Cache-Control", "no-store");
@@ -116,6 +125,6 @@ export default async function handler(req, res) {
   } catch (e) {
     console.error(e);
     if (res.headersSent) return res.end();
-    return res.status(502).json({ error: "tts failed" });
+    return res.status(503).json({ error: "voice unavailable" });
   }
 }

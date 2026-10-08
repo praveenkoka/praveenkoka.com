@@ -3,17 +3,25 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>Talk to Praveen | Praveen Koka</title>
-  <meta name="description" content="Chat with a 3D AI avatar of Praveen Koka about his work in applied AI, AI research and building startups.">
-  <meta name="robots" content="index, follow">
+  <title>Talk to Praveen Koka | 3D AI Avatar</title>
+  <meta name="description" content="Chat with a 3D AI avatar of Praveen Koka, VP of AI at Trilogy and founder of Tandav Labs. Ask about applied AI, AI research and building startups.">
+  <meta name="robots" content="index, follow, max-image-preview:large">
   <link rel="canonical" href="https://www.praveenkoka.com/talk/">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="Praveen Koka">
+  <meta property="og:locale" content="en_US">
   <meta property="og:url" content="https://www.praveenkoka.com/talk/">
-  <meta property="og:title" content="Talk to Praveen">
-  <meta property="og:description" content="A 3D AI avatar of Praveen Koka. Ask about applied AI, research and startups.">
-  <meta property="og:image" content="https://www.praveenkoka.com/talk/assets/world-preview.jpg">
+  <meta property="og:title" content="Talk to Praveen Koka's 3D AI avatar">
+  <meta property="og:description" content="Ask the 3D version about applied AI, AI research and building startups. Short answers, guaranteed.">
+  <meta property="og:image" content="https://www.praveenkoka.com/talk/assets/og-talk.jpg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Praveen Koka's 3D avatar on a rooftop at dusk, next to the words Talk to Praveen.">
   <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Talk to Praveen Koka's 3D AI avatar">
+  <meta name="twitter:description" content="Ask the 3D version about applied AI, AI research and building startups.">
+  <meta name="twitter:image" content="https://www.praveenkoka.com/talk/assets/og-talk.jpg">
+  <meta name="twitter:image:alt" content="Praveen Koka's 3D avatar on a rooftop at dusk, next to the words Talk to Praveen.">
   <meta name="theme-color" content="#0b0f2a">
   <link rel="icon" href="/favicon.ico" sizes="48x48">
   <link rel="apple-touch-icon" href="/apple-touch-icon.png">
@@ -60,7 +68,8 @@
       <button type="button" data-q="Do a little dance!">Dance!</button>
     </div>
     <div class="bar">
-      <input id="q" name="q" type="text" maxlength="300" placeholder="Ask me about my work..." aria-label="Ask Praveen a question" disabled>
+      <input id="q" name="q" type="text" maxlength="240" placeholder="Ask me about my work..." aria-label="Ask Praveen a question" aria-describedby="count" disabled>
+      <span id="count" class="count" aria-live="polite"></span>
       <button type="button" id="mic" class="icon-btn" aria-label="Speak your question" title="Speak" hidden>
         <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>
       </button>

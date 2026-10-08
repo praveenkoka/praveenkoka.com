@@ -141,7 +141,8 @@ controls.addEventListener("end", () => { lastInteraction = performance.now(); })
 
 function frame() {
   const portrait = camera.aspect < 0.8;
-  if (SNAPSHOT) { camera.fov = 12; camera.position.set(0, 1.66, 4.6); controls.target.set(0, 1.56, 0); }
+  if (SNAPSHOT && params.get("frame") === "og") { camera.fov = 30; camera.position.set(-1.1, 1.45, 4.6); controls.target.set(-1.1, 1.15, 0); } // link-preview image: him on the right third
+  else if (SNAPSHOT) { camera.fov = 12; camera.position.set(0, 1.66, 4.6); controls.target.set(0, 1.56, 0); }
   else if (portrait) { camera.fov = 40; camera.position.set(0, 1.3, 5.6); controls.target.set(0, 0.62, 0); }
   else { camera.fov = 32; camera.position.set(0, 1.45, 5.6); controls.target.set(0, 0.92, 0); }
   if (params.has("az")) { // test hook: start the camera at a given swivel angle (radians)
@@ -156,7 +157,7 @@ function resize() {
   renderer.setSize(w, h, false);
   composer.setSize(w, h);
   camera.aspect = w / h;
-  camera.fov = SNAPSHOT ? 12 : camera.aspect < 0.8 ? 40 : 32;
+  camera.fov = SNAPSHOT ? (params.get("frame") === "og" ? 30 : 12) : camera.aspect < 0.8 ? 40 : 32;
   camera.updateProjectionMatrix();
 }
 window.addEventListener("resize", resize);
@@ -242,7 +243,7 @@ function audioVisemes() {
   else { target.viseme_O = 0.55 * open; }
 }
 
-// text-driven (browser voice fallback): walk the text at speaking pace, resync on word boundaries
+// text-driven (muted or no voice): walk the text at speaking pace
 let ttsText = "", charAnchor = 0, anchorTime = 0;
 const CPS = 13.5;
 function textVisemes(now) {
@@ -265,25 +266,26 @@ function applyMouth(dt) {
 }
 
 /* ============ speech ============ */
-let audioCtx, muted = false, speaking = false, mode = null, dancingUntil = 0, ttsAvailable = true;
+let audioCtx, muted = false, speaking = false, mode = null, dancingUntil = 0;
 
+// When the voice service is unavailable (e.g. the free Murf quota ran out), answer in captions
+// with the mouth still moving, and don't ask the server again for a while.
+let voiceDownUntil = 0;
 async function speak(text) {
   stopSpeaking();
   const myTurn = ++turn;
-  if (muted) { await fakeSpeak(text); return; }
-  if (ttsAvailable) {
-    try {
-      const r = await fetch("/api/tts/", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text }) });
-      if (r.status === 501) ttsAvailable = false;
-      else if (r.ok) {
-        const type = r.headers.get("Content-Type") || "";
-        if (type.startsWith("audio/L16")) { await playPcmStream(r.body, myTurn); return; }
-        await playAudio(await r.arrayBuffer(), myTurn);
-        return;
-      }
-    } catch (e) { console.warn(e); }
-  }
-  await browserSpeak(text);
+  if (muted || performance.now() < voiceDownUntil) { await fakeSpeak(text); return; }
+  try {
+    const r = await fetch("/api/tts/", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text }) });
+    if (r.ok) {
+      const type = r.headers.get("Content-Type") || "";
+      if (type.startsWith("audio/L16")) { await playPcmStream(r.body, myTurn); return; }
+      await playAudio(await r.arrayBuffer(), myTurn);
+      return;
+    }
+    voiceDownUntil = performance.now() + 10 * 60 * 1000;
+  } catch (e) { console.warn(e); voiceDownUntil = performance.now() + 60 * 1000; }
+  if (myTurn === turn) await fakeSpeak(text);
 }
 
 // Google TTS: 16-bit PCM arrives in chunks; schedule each chunk back to back as it lands.
@@ -335,31 +337,6 @@ function playAudio(buf, myTurn) {
   });
 }
 
-let voice = null;
-function pickVoice() {
-  const vs = speechSynthesis.getVoices();
-  voice = vs.find((v) => /en-IN/i.test(v.lang) && /rishi|male|prabhat|ravi/i.test(v.name))
-    || vs.find((v) => /en-IN/i.test(v.lang))
-    || vs.find((v) => /en-GB/i.test(v.lang) && /daniel|male/i.test(v.name))
-    || vs.find((v) => /^en/i.test(v.lang));
-}
-if ("speechSynthesis" in window) { pickVoice(); speechSynthesis.onvoiceschanged = pickVoice; }
-
-function browserSpeak(text) {
-  return new Promise((resolve) => {
-    if (!("speechSynthesis" in window)) { fakeSpeak(text).then(resolve); return; }
-    const u = new SpeechSynthesisUtterance(text);
-    if (voice) u.voice = voice;
-    u.lang = voice?.lang || "en-IN";
-    u.pitch = 0.75; u.rate = 1.0;
-    ttsText = text; charAnchor = 0;
-    u.onstart = () => { anchorTime = performance.now(); mode = "text"; startTalking(); };
-    u.onboundary = (e) => { charAnchor = e.charIndex; anchorTime = performance.now(); };
-    u.onend = u.onerror = () => { stopTalking(); resolve(); };
-    speechSynthesis.speak(u);
-  });
-}
-
 // muted: animate the mouth from the text with no sound
 function fakeSpeak(text) {
   return new Promise((resolve) => {
@@ -379,7 +356,6 @@ function stopSpeaking() {
   turn++;
   for (const src of scheduled) { try { src.stop(); } catch {} }
   scheduled = [];
-  if ("speechSynthesis" in window) speechSynthesis.cancel();
   speaking = false; mode = null; clearTargets();
 }
 
@@ -439,8 +415,19 @@ async function ask(question) {
   await speak(reply);
 }
 
-$("ask").addEventListener("submit", (e) => { e.preventDefault(); const q = $("q").value; $("q").value = ""; ask(q); });
-$("q").addEventListener("input", () => { $("send").disabled = busy || !$("q").value.trim(); });
+$("ask").addEventListener("submit", (e) => { e.preventDefault(); const q = $("q").value.slice(0, MAX_CHARS); $("q").value = ""; updateCount(); ask(q); });
+// Keep prompts chat-sized: about 60 tokens (~4 characters per token). The server enforces the same cap.
+const MAX_TOKENS = 60, MAX_CHARS = MAX_TOKENS * 4;
+const approxTokens = (t) => Math.ceil(t.length / 4);
+function updateCount() {
+  const q = $("q");
+  if (q.value.length > MAX_CHARS) q.value = q.value.slice(0, MAX_CHARS);
+  const n = approxTokens(q.value), c = $("count");
+  c.textContent = n >= MAX_TOKENS * 0.7 ? `${n}/${MAX_TOKENS}` : "";
+  c.classList.toggle("full", n >= MAX_TOKENS);
+  $("send").disabled = busy || !q.value.trim();
+}
+$("q").addEventListener("input", updateCount);
 $("chips").addEventListener("click", (e) => { const b = e.target.closest("button[data-q]"); if (b) ask(b.dataset.q); });
 
 $("mute").addEventListener("click", () => {

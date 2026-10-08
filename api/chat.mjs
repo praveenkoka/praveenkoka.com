@@ -1,5 +1,6 @@
 // POST /api/chat  { messages: [{ role: "user"|"model", text }] }  ->  { reply, gesture }
 import { PERSONA } from "./_persona.mjs";
+import { checkBudget, recordSpend, chatCost, outOfTokens, hoursToPacificMidnight } from "./_budget.mjs";
 
 const MODEL = process.env.CHAT_MODEL || "gemini-3.5-flash-lite";
 const GESTURES = ["none", "nod", "acknowledge", "dance"];
@@ -19,13 +20,18 @@ export default async function handler(req, res) {
   const ip = (req.headers["x-forwarded-for"] || "").split(",")[0].trim() || "local";
   if (limited(ip)) return res.status(429).json({ reply: "Easy there. Give me a minute to catch my breath.", gesture: "none" });
 
+  // ~60-token cap per visitor message (240 chars), matching the page; model turns are already short
   const messages = Array.isArray(req.body?.messages) ? req.body.messages.slice(-8) : [];
   const contents = messages
     .filter((m) => typeof m?.text === "string" && m.text.trim())
-    .map((m) => ({ role: m.role === "model" ? "model" : "user", parts: [{ text: m.text.slice(0, 400) }] }));
+    .map((m) => ({ role: m.role === "model" ? "model" : "user", parts: [{ text: m.text.slice(0, m.role === "model" ? 400 : 240) }] }));
   if (!contents.length || contents[contents.length - 1].role !== "user") {
     return res.status(400).json({ error: "last message must be from the user" });
   }
+
+  // Daily AI budget, tracked across all instances
+  const budget = await checkBudget();
+  if (!budget.ok) return res.status(200).json({ reply: outOfTokens(budget.retryHours), gesture: "none", outOfTokens: true });
 
   try {
     const r = await fetch(
@@ -50,6 +56,12 @@ export default async function handler(req, res) {
       }
     );
     const data = await r.json();
+    if (data.usageMetadata) await recordSpend(chatCost(data.usageMetadata));
+    // provider-side quota or billing limits: same canned reply, with time until Google's daily reset
+    if (r.status === 429 || data.error?.status === "RESOURCE_EXHAUSTED") {
+      console.error("[chat] quota", JSON.stringify(data.error || {}).slice(0, 300));
+      return res.status(200).json({ reply: outOfTokens(hoursToPacificMidnight()), gesture: "none", outOfTokens: true });
+    }
     const raw = data.candidates?.[0]?.content?.parts?.map((p) => p.text || "").join("") || "";
     const out = JSON.parse(raw);
     const reply = String(out.reply || "").replace(/—/g, ", ").trim().slice(0, 400);
