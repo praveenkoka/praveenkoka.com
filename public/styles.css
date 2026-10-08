@@ -247,3 +247,27 @@ footer.footer-strip a { font-family: var(--font-d); letter-spacing: 0.14em; text
   html { scroll-behavior: auto; }
   * { transition: none !important; }
 }
+
+/* ============ TALK WIDGET ============ */
+.talk-widget { position: fixed; right: max(20px, env(safe-area-inset-right)); bottom: max(20px, env(safe-area-inset-bottom)); z-index: 60; display: flex; align-items: flex-end; gap: 12px; }
+.talk-bubble {
+  position: relative; max-width: 220px; padding: 12px 34px 12px 14px; border-radius: 14px 14px 4px 14px;
+  background: #0b0b0b; color: #f5f4ef; font-size: 14px; line-height: 1.4; box-shadow: 0 10px 30px rgba(0,0,0,.18);
+  opacity: 0; transform: translateY(8px); pointer-events: none; transition: opacity .35s ease, transform .35s ease;
+}
+.talk-bubble.show { opacity: 1; transform: none; pointer-events: auto; }
+.talk-bubble b { font-family: var(--font-d); font-weight: 500; display: block; margin-bottom: 2px; }
+.talk-bubble button { position: absolute; top: 4px; right: 4px; width: 28px; height: 28px; border: 0; background: transparent; color: #9a9a96; font-size: 18px; line-height: 1; cursor: pointer; border-radius: 50%; }
+.talk-bubble button:hover { color: #fff; }
+.talk-orb { position: relative; display: block; width: 76px; height: 76px; border-radius: 50%; padding: 3px; flex: 0 0 auto; box-shadow: 0 12px 34px rgba(194, 37, 128, .28); transition: transform .25s cubic-bezier(.16,1,.3,1); }
+.talk-orb::before { content: ""; position: absolute; inset: 0; border-radius: 50%; background: conic-gradient(from 0deg, #ffc07a, #ff7a59, #e34fa4, #6b7cff, #ffc07a); animation: orb-spin 6s linear infinite; }
+.talk-orb img { position: relative; width: 70px; height: 70px; border-radius: 50%; object-fit: cover; border: 2px solid #f5f4ef; animation: orb-breathe 4s ease-in-out infinite; }
+.talk-orb .live { position: absolute; right: 4px; bottom: 4px; width: 14px; height: 14px; border-radius: 50%; background: #22c55e; border: 2px solid #f5f4ef; }
+.talk-orb:hover { transform: scale(1.06); }
+.talk-orb:focus-visible { outline: 2px solid #0b0b0b; outline-offset: 4px; }
+@keyframes orb-spin { to { transform: rotate(360deg); } }
+@keyframes orb-breathe { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.025); } }
+.nav-links a.talk-link { display: inline-flex; align-items: center; gap: 8px; color: var(--ink); }
+.nav-links a.talk-link::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: #22c55e; box-shadow: 0 0 0 3px rgba(34,197,94,.18); }
+@media (max-width: 600px) { .talk-bubble { max-width: 170px; font-size: 13px; } .talk-orb { width: 64px; height: 64px; } .talk-orb img { width: 58px; height: 58px; } }
+@media (prefers-reduced-motion: reduce) { .talk-orb::before, .talk-orb img { animation: none; } }
