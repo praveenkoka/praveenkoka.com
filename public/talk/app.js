@@ -147,6 +147,7 @@ function frame() {
   if (SNAPSHOT && params.get("frame") === "og") { camera.fov = 30; camera.position.set(-1.1, 1.45, 4.6); controls.target.set(-1.1, 1.15, 0); } // link-preview image: him on the right third
   else if (SNAPSHOT) { camera.fov = 12; camera.position.set(0, 1.66, 4.6); controls.target.set(0, 1.56, 0); }
   else if (portrait) { camera.fov = 40; camera.position.set(0, 1.3, 5.6); controls.target.set(0, 0.62, 0); }
+  else if (window.innerHeight < 760 || window.innerWidth <= 900) { camera.fov = 32; camera.position.set(0, 1.5, 6.6); controls.target.set(0, 0.55, 0); } // shorter screens: higher in frame, clear of the caption
   else { camera.fov = 32; camera.position.set(0, 1.45, 5.6); controls.target.set(0, 0.92, 0); }
   if (params.has("az")) { // test hook: start the camera at a given swivel angle (radians)
     const off = camera.position.clone().sub(controls.target).applyAxisAngle(new THREE.Vector3(0, 1, 0), Number(params.get("az")));

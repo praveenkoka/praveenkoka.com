@@ -75,15 +75,16 @@
 
   <div id="caption" class="caption" aria-live="polite"><p class="q" id="cap-q"></p><p class="a" id="cap-a"></p></div>
 
+  <div class="chips" id="chips">
+    <button type="button" data-q="Who are you?">Who are you?</button>
+    <button type="button" data-q="What's Tandav Labs?">What's Tandav Labs?</button>
+    <button type="button" data-q="What do you do at Trilogy?">Trilogy?</button>
+    <button type="button" data-q="Agentic or vanilla retrieval?">Agentic vs vanilla RAG?</button>
+    <button type="button" data-q="Best thing you've built?">Best build?</button>
+    <button type="button" data-q="Do a little dance!">Dance!</button>
+  </div>
+
   <form id="ask" class="ask" autocomplete="off">
-    <div class="chips" id="chips">
-      <button type="button" data-q="Who are you?">Who are you?</button>
-      <button type="button" data-q="What's Tandav Labs?">What's Tandav Labs?</button>
-      <button type="button" data-q="What do you do at Trilogy?">Trilogy?</button>
-      <button type="button" data-q="Agentic or vanilla retrieval?">Agentic vs vanilla RAG?</button>
-      <button type="button" data-q="Best thing you've built?">Best build?</button>
-      <button type="button" data-q="Do a little dance!">Dance!</button>
-    </div>
     <div class="bar">
       <input id="q" name="q" type="text" maxlength="240" placeholder="Ask me about my work..." aria-label="Ask Praveen a question" aria-describedby="count" disabled>
       <span id="count" class="count" aria-live="polite"></span>
