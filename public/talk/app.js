@@ -136,7 +136,8 @@ const PAN_MIN = new THREE.Vector3(-1.6, 0.35, -1.6), PAN_MAX = new THREE.Vector3
 controls.addEventListener("change", () => { controls.target.clamp(PAN_MIN, PAN_MAX); });
 
 let lastInteraction = performance.now();
-let introUntil = 0; // slow welcome spin for the first 10 seconds
+const INTRO_MS = 2000;
+let introUntil = 0; // short welcome spin when the page opens
 function interacted() { lastInteraction = performance.now(); introUntil = 0; controls.autoRotate = false; $("hint")?.classList.add("gone"); }
 controls.addEventListener("start", interacted);
 controls.addEventListener("end", () => { lastInteraction = performance.now(); });
@@ -518,7 +519,7 @@ function ensureAudio() {
 const HELLO = "Hey, I'm Praveen. Well, the 3D version. Ask me about AI, startups, or what I'm building.";
 function ready() {
   $("intro").classList.add("gone");
-  if (!SNAPSHOT) introUntil = performance.now() + 10000;
+  if (!SNAPSHOT) introUntil = performance.now() + INTRO_MS;
   if (SNAPSHOT) { document.querySelectorAll(".top,.ask,.caption,.hint").forEach((e) => (e.style.display = "none")); return; }
   $("q").disabled = false;
   if (saved.muted) { muted = true; $("mute").setAttribute("aria-pressed", "true"); $("mute").setAttribute("aria-label", "Unmute voice"); }
@@ -590,10 +591,10 @@ renderer.setAnimationLoop(() => {
     if (resetAnim.t >= 1) resetAnim = null;
   }
   if (now < introUntil) {
-    // ease in over the first second, glide, then ease out over the last three
-    const left = (introUntil - now) / 1000, elapsed = 10 - left;
-    const k = Math.min(1, elapsed / 1) * Math.min(1, left / 3);
-    controls.autoRotate = true; controls.autoRotateSpeed = 1.6 * k * k * (3 - 2 * k);
+    // ease in quickly, then glide to a stop over the last second
+    const left = (introUntil - now) / 1000, elapsed = INTRO_MS / 1000 - left;
+    const k = Math.min(1, elapsed / 0.4) * Math.min(1, left / 1);
+    controls.autoRotate = true; controls.autoRotateSpeed = 2.4 * k * k * (3 - 2 * k);
   } else if (!SNAPSHOT && !busy && !speaking && now - lastInteraction > 20000) {
     controls.autoRotate = true; controls.autoRotateSpeed = 0.35;
   } else if (controls.autoRotate && introUntil && now >= introUntil) {
