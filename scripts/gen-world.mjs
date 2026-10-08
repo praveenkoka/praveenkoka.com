@@ -1,6 +1,6 @@
 // Generates the /talk background worlds with Gemini's image model.
 // Usage: node --env-file=.env.local scripts/gen-world.mjs <world> [outfile]
-// Worlds: bengaluru (the original rooftop), berlin (park), court (basketball arena), studio.
+// Worlds: bengaluru (the original rooftop), berlin (park), court (basketball arena), studio, gym, office.
 // Every world uses the same framing so the avatar stands on its floor: 21:9, eye-level camera,
 // horizon at about 45 percent of image height, empty space in the exact centre.
 import { writeFileSync } from "node:fs";
@@ -33,6 +33,17 @@ A beautiful drum kit with brass cymbals off to one side, guitar amps, a grand pi
 a large control room window glowing behind the glass with mixing console lights, neon strip lights in magenta and cyan.
 Foreground: a wide dark wooden floor with Persian rugs at the edges and soft reflections. Mood: intimate, warm, creative.
 Palette: deep charcoal, warm walnut, magenta and cyan neon accents, warm tungsten light.`,
+  gym: `A wide establishing shot from the far end of the room, so everything sits small and life-size in the frame.
+A spacious modern premium gym in the early morning, floor-to-ceiling windows along the back wall with soft sunrise light and a city view,
+racks of dumbbells and barbells, a squat rack, rowing machines and a couple of treadmills along the walls, a few kettlebells and a jump rope on the floor,
+black rubber flooring with a clear open training area in the centre. No people, no logos, no text.
+Mood: energetic but calm, clean, aspirational. Palette: charcoal and black, warm sunrise orange, touches of brushed steel.`,
+  office: `A wide establishing shot from the far end of the room, so everything sits small and life-size in the frame.
+A buzzing but empty early-stage tech startup office in the evening, an open-plan loft with exposed ceiling ducts and warm pendant lights,
+long shared desks with laptops and big monitors showing code and charts, whiteboards covered in architecture diagrams and sticky notes,
+a beanbag corner, plants, a coffee bar, a ping-pong table pushed to one side, big windows with a city at dusk.
+Clear open floor in the centre. No people, no logos, no readable text. Mood: scrappy, focused, optimistic.
+Palette: warm wood, white, soft amber light, deep blue dusk outside, a few green plants.`,
 };
 
 const world = process.argv[2];

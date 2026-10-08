@@ -45,13 +45,15 @@ const R = 34;
 // size and sits in proportion to him.
 const bandHeight = (copies) => (2 * Math.PI * R) / copies / IMG_ASPECT;
 const BH = bandHeight(2);
-// Four worlds, all generated with the same framing (scripts/gen-world.mjs). Each one tints the
+// Six worlds, all generated with the same framing (scripts/gen-world.mjs). Each one tints the
 // floor and the rim lights to match its light.
 const WORLDS = {
   bengaluru: { label: "Bengaluru", floor: 0x06070f, rimL: 0xff4fa3, rimR: 0xffa040, hemi: 0x7f8cff },
   berlin: { label: "Berlin", floor: 0x1c2a12, floorOpacity: 0.55, rimL: 0xfff1d6, rimR: 0xffe2a8, hemi: 0xd6ecff, hemiI: 1.9, keyI: 3.2, particles: false },
   court: { label: "Court", floor: 0x2a1708, floorOpacity: 0.6, rimL: 0xffb46b, rimR: 0x7fb4ff, hemi: 0xffe6c8, hemiI: 1.3, keyI: 2.8 },
   studio: { label: "Studio", floor: 0x0b0806, rimL: 0xff4fd2, rimR: 0x45dcff, hemi: 0x8a7a9a, copies: 4, offset: 0.5 + 0.09 }, // kit off his shoulder, not hidden behind him
+  gym: { label: "Gym", floor: 0x0a0a0c, floorOpacity: 0.8, rimL: 0xffb27a, rimR: 0xffd2a6, hemi: 0xffd9c0, hemiI: 1.3, keyI: 2.8, copies: 4 },
+  office: { label: "Startup", floor: 0x120c07, floorOpacity: 0.7, rimL: 0xffbe7a, rimR: 0x8fb4ff, hemi: 0xffe2c0, hemiI: 1.2, keyI: 2.6, copies: 4 },
 };
 const worldParam = new URLSearchParams(location.search).get("world");
 let worldId = WORLDS[worldParam] ? worldParam : (() => { try { const w = JSON.parse(localStorage.getItem("pk-talk-v1"))?.world; return WORLDS[w] ? w : "bengaluru"; } catch { return "bengaluru"; } })();
@@ -719,6 +721,7 @@ async function ask(question, typed = false) {
     const r = await fetch("/api/chat/", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ messages: history.slice(-8), sid }) });
     const d = await r.json();
     if (d.reply) { reply = d.reply; g = d.gesture || "none"; clip = d.clip || null; }
+    if (WORLDS[d.world] && d.world !== worldId) { setWorld(d.world); persist(); showNextWorld(); } // the topic takes him somewhere
   } catch (e) { console.warn(e); }
   history.push({ role: "model", text: reply });
   persist();

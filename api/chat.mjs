@@ -5,6 +5,7 @@ import { logExchange } from "./_chatlog.mjs";
 
 const MODEL = process.env.CHAT_MODEL || "gemini-3.5-flash-lite";
 const GESTURES = ["none", "nod", "acknowledge", "dance", "salute", "dismiss", "jumprope"];
+const WORLDS = ["none", "berlin", "gym", "office", "studio"]; // places the topic can take him (see the persona)
 
 // Dance requests get a random comedic angle so repeat requests (and new visitors) hear different jokes.
 const DANCE_ANGLES = [
@@ -96,7 +97,7 @@ export default async function handler(req, res) {
             responseMimeType: "application/json",
             responseSchema: {
               type: "OBJECT",
-              properties: { reply: { type: "STRING" }, gesture: { type: "STRING", enum: GESTURES } },
+              properties: { reply: { type: "STRING" }, gesture: { type: "STRING", enum: GESTURES }, world: { type: "STRING", enum: WORLDS } },
               required: ["reply", "gesture"],
             },
           },
@@ -116,9 +117,10 @@ export default async function handler(req, res) {
     const out = JSON.parse(raw);
     const reply = String(out.reply || "").replace(/—/g, ", ").trim().slice(0, 400);
     const gesture = GESTURES.includes(out.gesture) ? out.gesture : "none";
+    const world = WORLDS.includes(out.world) && out.world !== "none" ? out.world : undefined;
     if (!reply) throw new Error("empty reply: " + JSON.stringify(data).slice(0, 300));
     await Promise.all([spend, log(reply, gesture)]);
-    return res.status(200).json({ reply, gesture });
+    return res.status(200).json({ reply, gesture, world });
   } catch (e) {
     console.error(e);
     return res.status(200).json({ reply: "My brain just buffered. Try that again?", gesture: "none" });
