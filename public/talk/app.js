@@ -283,14 +283,13 @@ function settle() {
 function onClipFinished() { settle(); }
 
 // Idle life: alternate breathing and the guarded "offensive" idle at random, with the odd
-// mimed jump-rope session or dismissive wave so he never looks frozen.
+// dismissive wave so he never looks frozen. (Jump rope is kept for declining physical requests.)
 function directIdle(now) {
   if (SNAPSHOT || speaking || busy || busyBody() || now < nextIdleChange || !current) return;
   if (!IDLES.includes(current.getClip().name)) return; // let one-shots finish first
   nextIdleChange = now + 8000 + Math.random() * 7000;
   const r = Math.random();
-  if (r < 0.12) { jumpingUntil = now + 4000 + Math.random() * 2000; play("Jumping Rope", 0.4); setTimeout(settle, jumpingUntil - now + 50); }
-  else if (r < 0.2) play("Dismissing Gesture", 0.35);
+  if (r < 0.08) play("Dismissing Gesture", 0.35);
   else { currentIdle = Math.random() < 0.6 ? IDLES.find((n) => n !== currentIdle) : currentIdle; play(currentIdle, 0.6); }
 }
 
