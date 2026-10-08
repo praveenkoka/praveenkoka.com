@@ -6,6 +6,25 @@ import { logExchange } from "./_chatlog.mjs";
 const MODEL = process.env.CHAT_MODEL || "gemini-3.5-flash-lite";
 const GESTURES = ["none", "nod", "acknowledge", "dance", "salute", "dismiss", "jumprope"];
 
+// Dance requests get a random comedic angle so repeat requests (and new visitors) hear different jokes.
+const DANCE_ANGLES = [
+  "you only agreed because the boombox showed up uninvited",
+  "your knees have filed a formal complaint",
+  "you are doing it under protest, for legal reasons",
+  "this is not in your job description as an AI avatar",
+  "you dance like someone debugging production at 2am",
+  "the real Praveen would never, which is exactly why you are doing it",
+  "you are rendering at a low frame rate on purpose so nobody sees the details",
+  "you would rather be refactoring something",
+  "you will deny this ever happened",
+  "this is strictly a one-time favour, again",
+  "your dance moves were trained on a very small dataset",
+  "you blame the rigging in Blender for anything that looks wrong",
+  "you are treating it like a reluctant all-hands demo",
+  "you are billing this as unpaid overtime",
+];
+const DANCE_RE = /\b(danc\w*|boogie|groove|bust a move|moves|twerk|shake it|celebrate|party)\b/i;
+
 // Best-effort per-instance rate limit: 20 requests per IP per 10 minutes.
 const hits = new Map();
 function limited(ip) {
@@ -49,7 +68,9 @@ export default async function handler(req, res) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          systemInstruction: { parts: [{ text: PERSONA }] },
+          systemInstruction: { parts: [{ text: DANCE_RE.test(question)
+            ? `${PERSONA}\n\nFor this reply only, if you dance, build the joke around this idea (in your own words): ${DANCE_ANGLES[Math.floor(Math.random() * DANCE_ANGLES.length)]}.`
+            : PERSONA }] },
           contents,
           generationConfig: {
             temperature: 0.9,
