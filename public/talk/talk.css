@@ -44,6 +44,9 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .view-ctrl .pad .rt { grid-column: 3; grid-row: 2; } .view-ctrl .pad .dn { grid-column: 2; grid-row: 3; }
 @media (max-width: 640px) { .view-ctrl { right: 10px; top: 120px; padding: 4px; } .view-ctrl button { width: 34px; height: 34px; } .view-ctrl .pad { grid-template-columns: repeat(3, 30px); grid-template-rows: repeat(3, 30px); } .view-ctrl .pad button { width: 30px; height: 30px; } }
 
+/* phones and touch-only devices: swipe and pinch are intuitive, so hide the buttons */
+@media (max-width: 640px), (hover: none) and (pointer: coarse) { .view-ctrl { display: none; } }
+
 /* caption */
 .caption { position: fixed; left: 50%; transform: translateX(-50%); bottom: 112px; width: min(600px, calc(100% - 32px)); text-align: center; z-index: 4; pointer-events: none; transition: opacity .3s; }
 .caption .q { font-size: 13px; color: var(--mut); margin-bottom: 8px; min-height: 1em; }
