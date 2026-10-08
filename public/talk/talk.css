@@ -80,10 +80,12 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .built-k { color: var(--mut); text-transform: uppercase; letter-spacing: .14em; font-size: 10.5px; }
 .built-v { color: var(--ink); }
 @media (max-width: 1180px) { .built { bottom: auto; top: calc(max(16px, env(safe-area-inset-top)) + 54px); left: max(20px, env(safe-area-inset-left)); height: 34px; padding: 0 12px; } }
-/* phones: sit in the top bar, between the portrait and the world thumbnail */
-@media (max-width: 640px) { .built-k { display: none; } .built { font-size: 11.5px; height: 34px; top: calc(max(16px, env(safe-area-inset-top)) + 5px); left: calc(max(20px, env(safe-area-inset-left)) + 54px); padding: 0 12px; } }
-/* very narrow phones: just the label, it still opens the build story */
-@media (max-width: 375px) { .built-v { display: none; } .built-k { display: inline; color: var(--ink); } }
+/* phones: a compact stacked "BUILT / WITH" tag in the top bar, beside the portrait; it still opens the build story */
+@media (max-width: 640px) {
+  .built { top: calc(max(16px, env(safe-area-inset-top)) + 4px); left: calc(max(20px, env(safe-area-inset-left)) + 54px); height: 36px; padding: 0 11px; border-radius: 12px; }
+  .built-v { display: none; }
+  .built-k { display: flex; flex-direction: column; align-items: center; line-height: 1.15; font-size: 9.5px; letter-spacing: .16em; color: var(--ink); }
+}
 .bar { display: flex; align-items: center; gap: 8px; padding: 6px 6px 6px 20px; border-radius: 999px; background: rgba(10, 12, 28, 0.7); border: 1px solid var(--line); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); box-shadow: 0 10px 40px rgba(0,0,0,.35); }
 .bar:focus-within { border-color: rgba(255, 192, 122, .6); }
 .bar input { flex: 1; min-width: 0; height: 44px; background: transparent; border: 0; outline: 0; color: var(--ink); font: 16px var(--font-b); }
