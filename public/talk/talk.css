@@ -122,3 +122,12 @@ button { font: inherit; color: inherit; cursor: pointer; }
 @media (prefers-reduced-motion: reduce) { .dots span { animation: none; opacity: .6; } .chips button.fresh { animation: none; box-shadow: 0 0 14px rgba(255, 122, 89, .35); } }
 
 [hidden] { display: none !important; }
+
+/* world switcher */
+.worlds { position: fixed; top: calc(max(16px, env(safe-area-inset-top)) + 54px); right: 20px; z-index: 6; display: grid; grid-template-columns: repeat(2, 104px); gap: 8px; padding: 8px; border-radius: 16px; background: var(--glass); border: 1px solid var(--line); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); box-shadow: 0 12px 40px rgba(0,0,0,.35); }
+.worlds button { display: flex; flex-direction: column; gap: 5px; padding: 4px; border-radius: 11px; border: 1px solid transparent; background: transparent; color: inherit; font: 500 12px/1.2 var(--font-d); letter-spacing: .02em; cursor: pointer; transition: border-color .2s, background .2s; }
+.worlds button img { width: 96px; height: 72px; border-radius: 8px; object-fit: cover; display: block; }
+.worlds button:hover { background: rgba(255,255,255,.06); }
+.worlds button[aria-pressed="true"] { border-color: rgba(255, 170, 110, .75); background: rgba(255, 170, 110, .1); }
+#world-btn[aria-expanded="true"] { border-color: rgba(255,255,255,.45); }
+@media (max-width: 640px) { .worlds { right: 12px; } }

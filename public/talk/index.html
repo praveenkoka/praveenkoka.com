@@ -29,7 +29,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
   <link rel="preload" href="/talk/assets/bald_indian.glb?v=14" as="fetch" crossorigin>
-  <link rel="stylesheet" href="/talk/talk.css?v=20261008j">
+  <link rel="stylesheet" href="/talk/talk.css?v=20261008k">
   <script type="importmap">
   {
     "imports": {
@@ -45,6 +45,9 @@
   <header class="top">
     <a class="back" href="/"><img src="/assets/img/portrait-96.jpg" alt="" width="96" height="96"><span>praveenkoka.com</span></a>
     <div class="top-actions">
+    <button id="world-btn" class="icon-btn" aria-label="Change world" title="Change world" aria-haspopup="true" aria-expanded="false" aria-controls="worlds">
+      <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg>
+    </button>
     <button id="reset" class="icon-btn" aria-label="Start a new chat" title="New chat" hidden>
       <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg>
     </button>
@@ -53,6 +56,12 @@
     </button>
     </div>
   </header>
+  <div id="worlds" class="worlds" role="group" aria-label="Choose a world" hidden>
+    <button type="button" data-world="bengaluru"><img src="/talk/assets/worlds/bengaluru-thumb.jpg" alt="" width="96" height="72"><span>Bengaluru</span></button>
+    <button type="button" data-world="berlin"><img src="/talk/assets/worlds/berlin-thumb.jpg" alt="" width="96" height="72"><span>Berlin</span></button>
+    <button type="button" data-world="newyork"><img src="/talk/assets/worlds/newyork-thumb.jpg" alt="" width="96" height="72"><span>New York</span></button>
+    <button type="button" data-world="studio"><img src="/talk/assets/worlds/studio-thumb.jpg" alt="" width="96" height="72"><span>Studio</span></button>
+  </div>
 
   <p id="hint" class="hint"><span class="wide">Drag to swivel &middot; right-drag to pan &middot; scroll to zoom</span><span class="narrow">Drag to swivel &middot; pinch to zoom</span></p>
 
@@ -113,6 +122,6 @@
     </div>
   </div>
 
-  <script type="module" src="/talk/app.js?v=20261008j"></script>
+  <script type="module" src="/talk/app.js?v=20261008k"></script>
 </body>
 </html>

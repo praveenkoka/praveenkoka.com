@@ -41,14 +41,31 @@ const camera = new THREE.PerspectiveCamera(32, 1, 0.1, 300);
 const IMG_ASPECT = 3168 / 1344;
 const R = 34;
 const BH = (R * Math.PI) / IMG_ASPECT; // each copy spans half the circumference
-const backdropTex = new THREE.TextureLoader().load("/talk/assets/world.jpg", (t) => { t.colorSpace = THREE.SRGBColorSpace; });
-backdropTex.colorSpace = THREE.SRGBColorSpace;
-backdropTex.wrapS = THREE.MirroredRepeatWrapping;
-backdropTex.repeat.x = -2;
-backdropTex.offset.x = 0.5; // image centre directly behind him from the starting view
+// Four worlds, all generated with the same framing (scripts/gen-world.mjs). Each one tints the
+// floor and the rim lights to match its light.
+const WORLDS = {
+  bengaluru: { label: "Bengaluru", floor: 0x06070f, rimL: 0xff4fa3, rimR: 0xffa040, hemi: 0x7f8cff },
+  berlin: { label: "Berlin", floor: 0x0d0b09, rimL: 0xffb066, rimR: 0xffd49a, hemi: 0xc9b49a },
+  newyork: { label: "New York", floor: 0x110d10, rimL: 0xff7fa8, rimR: 0xffb36b, hemi: 0xb6a4d6 },
+  studio: { label: "Studio", floor: 0x0b0806, rimL: 0xff4fd2, rimR: 0x45dcff, hemi: 0x8a7a9a },
+};
+const worldParam = new URLSearchParams(location.search).get("world");
+let worldId = WORLDS[worldParam] ? worldParam : (() => { try { const w = JSON.parse(localStorage.getItem("pk-talk-v1"))?.world; return WORLDS[w] ? w : "bengaluru"; } catch { return "bengaluru"; } })();
+const texLoader = new THREE.TextureLoader();
+const worldTex = {};
+function loadWorldTex(id) {
+  return (worldTex[id] ||= new Promise((resolve, reject) => texLoader.load(`/talk/assets/worlds/${id}.jpg`, (t) => {
+    t.colorSpace = THREE.SRGBColorSpace;
+    t.wrapS = THREE.MirroredRepeatWrapping;
+    t.repeat.x = -2;
+    t.offset.x = 0.5; // image centre directly behind him from the starting view
+    resolve(t);
+  }, undefined, reject)));
+}
+const backdropTex = new THREE.Texture(); // placeholder until the first world loads
 const backdrop = new THREE.Mesh(
   new THREE.CylinderGeometry(R, R, BH, 160, 1, true, Math.PI, Math.PI * 2),
-  new THREE.MeshBasicMaterial({ map: backdropTex, side: THREE.BackSide, toneMapped: false })
+  new THREE.MeshBasicMaterial({ map: backdropTex, color: 0x000000, side: THREE.BackSide, toneMapped: false })
 );
 // image horizon (45% from the top) at eye height, so the terrace floor in the picture lands behind his feet
 backdrop.position.set(0, 1.35 - 0.05 * BH + 2.6, 0);
@@ -70,7 +87,7 @@ floor.rotation.x = -Math.PI / 2; floor.position.y = -0.045; floor.receiveShadow 
 scene.add(floor);
 
 /* ============ lights ============ */
-scene.add(new THREE.HemisphereLight(0x7f8cff, 0x2a1810, 0.9));
+const hemi = new THREE.HemisphereLight(0x7f8cff, 0x2a1810, 0.9); scene.add(hemi);
 const key = new THREE.DirectionalLight(0xffd6ad, 2.4);
 key.position.set(2.2, 4.2, 3.4);
 key.castShadow = true;
@@ -81,6 +98,31 @@ scene.add(key);
 const rimL = new THREE.DirectionalLight(0xff4fa3, 2.2); rimL.position.set(-3, 2.6, -2.5); scene.add(rimL);
 const rimR = new THREE.DirectionalLight(0xffa040, 1.8); rimR.position.set(3, 2.2, -2.5); scene.add(rimR);
 const fill = new THREE.PointLight(0xbfc8ff, 0.8, 8); fill.position.set(-1.2, 1.6, 2.5); scene.add(fill);
+
+// Switching worlds: fade the backdrop to black, swap the picture and tints, fade back in.
+let worldFade = { from: 0, to: 1, start: 0, ms: 1 }, worldSwitch = 0;
+const fadeWorld = (to, ms) => { worldFade = { from: backdrop.material.color.r, to, start: performance.now(), ms }; };
+async function setWorld(id, instant = false) {
+  if (!WORLDS[id]) return;
+  const mine = ++worldSwitch;
+  worldId = id;
+  document.querySelectorAll("#worlds [data-world]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.world === id)));
+  if (!instant) fadeWorld(0, 220);
+  let tex;
+  try { tex = await loadWorldTex(id); } catch (e) { console.warn(e); return; }
+  if (!instant) await new Promise((r) => setTimeout(r, Math.max(0, 220 - (performance.now() - worldFade.start))));
+  if (mine !== worldSwitch) return;
+  const w = WORLDS[id];
+  backdrop.material.map = tex; backdrop.material.needsUpdate = true;
+  floor.material.color.setHex(w.floor);
+  rimL.color.setHex(w.rimL); rimR.color.setHex(w.rimR); hemi.color.setHex(w.hemi);
+  fadeWorld(1, instant ? 500 : 380);
+}
+function tickWorld(now) {
+  const k = Math.min(1, (now - worldFade.start) / worldFade.ms);
+  backdrop.material.color.setScalar(worldFade.from + (worldFade.to - worldFade.from) * k);
+}
+setWorld(worldId, true);
 
 /* ============ pedestal ============ */
 const pedestal = new THREE.Group();
@@ -638,7 +680,7 @@ const history = Array.isArray(saved.history) ? saved.history.filter((m) => m && 
 // anonymous conversation id, used only to group a visitor's exchanges in the chat log
 const newSid = () => (crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2) + Date.now().toString(36));
 let sid = typeof saved.sid === "string" && /^[a-zA-Z0-9-]{8,64}$/.test(saved.sid) ? saved.sid : newSid();
-function persist() { store.save({ history: history.slice(-30), muted, sid }); }
+function persist() { store.save({ history: history.slice(-30), muted, sid, world: worldId }); }
 const capQ = $("cap-q"), capA = $("cap-a");
 let busy = false;
 
@@ -781,8 +823,23 @@ function ready() {
     armIntro();
   }
   faceVisitor();
+  if (params.get("demo") === "worlds") showWorlds(true); // test hook: picker open for screenshots
   if (params.get("demo") === "dance") { gesture("dance"); boom.end += 120000; dancingUntil += 120000; } // test hook: hold the dance and boombox for screenshots
 }
+
+// world switcher: a button in the top bar opens a small picker
+const worldsEl = $("worlds"), worldBtn = $("world-btn");
+const showWorlds = (open) => { worldsEl.hidden = !open; worldBtn.setAttribute("aria-expanded", String(open)); };
+worldBtn.addEventListener("click", (e) => { e.stopPropagation(); showWorlds(worldsEl.hidden); });
+worldsEl.addEventListener("click", (e) => {
+  const b = e.target.closest("[data-world]"); if (!b) return;
+  setWorld(b.dataset.world); persist(); showWorlds(false);
+});
+document.addEventListener("pointerdown", (e) => { if (!worldsEl.hidden && !e.target.closest("#worlds, #world-btn")) showWorlds(false); });
+document.addEventListener("keydown", (e) => { if (e.key === "Escape") showWorlds(false); });
+document.querySelectorAll("#worlds [data-world]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.world === worldId)));
+// warm the cache for the other worlds once he is on stage
+setTimeout(() => Object.keys(WORLDS).forEach((id) => { if (id !== worldId) loadWorldTex(id).catch(() => {}); }), 6000);
 
 $("reset").addEventListener("click", () => {
   stopSpeaking(); settle();
@@ -828,6 +885,7 @@ renderer.setAnimationLoop(() => {
   directIdle(now);
   tickMusic();
   tickBoombox(now);
+  tickWorld(now);
   if (speaking && mode === "audio" && analyser) audioVisemes();
   else if (speaking && mode === "text") textVisemes(now);
   else clearTargets();
