@@ -121,7 +121,7 @@ controls.enablePan = true;
 controls.screenSpacePanning = true;
 controls.panSpeed = 0.6;
 controls.enableDamping = true;
-controls.dampingFactor = 0.08;
+controls.dampingFactor = 0.045; // lower = longer glide after you let go
 controls.rotateSpeed = 0.6;
 controls.zoomSpeed = 0.7;
 controls.minDistance = 2.2;
@@ -136,7 +136,9 @@ const PAN_MIN = new THREE.Vector3(-1.6, 0.35, -1.6), PAN_MAX = new THREE.Vector3
 controls.addEventListener("change", () => { controls.target.clamp(PAN_MIN, PAN_MAX); });
 
 let lastInteraction = performance.now();
-controls.addEventListener("start", () => { lastInteraction = performance.now(); controls.autoRotate = false; $("hint")?.classList.add("gone"); });
+let introUntil = 0; // slow welcome spin for the first 10 seconds
+function interacted() { lastInteraction = performance.now(); introUntil = 0; controls.autoRotate = false; $("hint")?.classList.add("gone"); }
+controls.addEventListener("start", interacted);
 controls.addEventListener("end", () => { lastInteraction = performance.now(); });
 
 function frame() {
@@ -163,6 +165,60 @@ function resize() {
 window.addEventListener("resize", resize);
 resize();
 frame();
+
+/* ============ view controls (buttons) ============ */
+const UP = new THREE.Vector3(0, 1, 0), tmpV = new THREE.Vector3(), right = new THREE.Vector3();
+function rotateView(angle) {
+  tmpV.copy(camera.position).sub(controls.target).applyAxisAngle(UP, angle);
+  camera.position.copy(controls.target).add(tmpV);
+}
+function zoomView(factor) {
+  tmpV.copy(camera.position).sub(controls.target);
+  const d = THREE.MathUtils.clamp(tmpV.length() * factor, controls.minDistance, controls.maxDistance);
+  camera.position.copy(controls.target).add(tmpV.setLength(d));
+}
+function panView(dx, dy) {
+  right.setFromMatrixColumn(camera.matrix, 0).setY(0).normalize();
+  const before = controls.target.clone();
+  controls.target.addScaledVector(right, dx).add(new THREE.Vector3(0, dy, 0)).clamp(PAN_MIN, PAN_MAX);
+  camera.position.add(tmpV.copy(controls.target).sub(before));
+}
+// held buttons move smoothly every frame; a tap gives one small step
+const VIEW_RATE = { rotate: 1.1, zoom: 0.9, pan: 0.9 }; // rad/s, log-distance/s, m/s
+let held = null, heldSince = 0, resetAnim = null;
+function step(action, dir, dt) {
+  if (action === "rotate") rotateView(dir * VIEW_RATE.rotate * dt);
+  else if (action === "zoom") zoomView(Math.exp(-dir * VIEW_RATE.zoom * dt));
+  else if (action === "pan-x") panView(dir * VIEW_RATE.pan * dt, 0);
+  else if (action === "pan-y") panView(0, dir * VIEW_RATE.pan * dt);
+}
+function resetView() {
+  const from = { pos: camera.position.clone(), target: controls.target.clone() };
+  frame();
+  const to = { pos: camera.position.clone(), target: controls.target.clone() };
+  camera.position.copy(from.pos); controls.target.copy(from.target);
+  resetAnim = { from, to, t: 0 };
+}
+const viewCtrl = $("view-ctrl");
+if (viewCtrl && !SNAPSHOT) {
+  viewCtrl.addEventListener("pointerdown", (e) => {
+    const b = e.target.closest("button[data-act]"); if (!b) return;
+    e.preventDefault(); interacted();
+    if (b.dataset.act === "reset") { resetView(); return; }
+    held = { action: b.dataset.act, dir: Number(b.dataset.dir) }; heldSince = performance.now();
+    b.setPointerCapture?.(e.pointerId);
+  });
+  const release = () => { if (held && performance.now() - heldSince < 180) step(held.action, held.dir, 0.25); held = null; };
+  viewCtrl.addEventListener("pointerup", release);
+  viewCtrl.addEventListener("pointercancel", () => (held = null));
+  viewCtrl.addEventListener("lostpointercapture", () => (held = null));
+  // keyboard: Enter/Space on a focused button gives one step
+  viewCtrl.addEventListener("keydown", (e) => {
+    const b = e.target.closest("button[data-act]"); if (!b || (e.key !== "Enter" && e.key !== " ")) return;
+    e.preventDefault(); interacted();
+    if (b.dataset.act === "reset") resetView(); else step(b.dataset.act, Number(b.dataset.dir), 0.3);
+  });
+}
 
 /* ============ avatar ============ */
 let mixer, headBone, neckBone, avatarRoot;
@@ -462,6 +518,7 @@ function ensureAudio() {
 const HELLO = "Hey, I'm Praveen. Well, the 3D version. Ask me about AI, startups, or what I'm building.";
 function ready() {
   $("intro").classList.add("gone");
+  if (!SNAPSHOT) introUntil = performance.now() + 10000;
   if (SNAPSHOT) { document.querySelectorAll(".top,.ask,.caption,.hint").forEach((e) => (e.style.display = "none")); return; }
   $("q").disabled = false;
   if (saved.muted) { muted = true; $("mute").setAttribute("aria-pressed", "true"); $("mute").setAttribute("aria-label", "Unmute voice"); }
@@ -524,8 +581,25 @@ renderer.setAnimationLoop(() => {
   if (SNAPSHOT && params.get("morph")) for (const kv of params.get("morph").split(",")) { const [n, v] = kv.split(":"); setMorph(n, Number(v)); }
 
   // drift slowly round him when nobody is interacting
-  if (!SNAPSHOT && !busy && !speaking && now - lastInteraction > 20000) controls.autoRotate = true;
-  controls.update();
+  if (held) step(held.action, held.dir, dt);
+  if (resetAnim) {
+    resetAnim.t = Math.min(1, resetAnim.t + dt / 0.7);
+    const e = 1 - Math.pow(1 - resetAnim.t, 3);
+    camera.position.lerpVectors(resetAnim.from.pos, resetAnim.to.pos, e);
+    controls.target.lerpVectors(resetAnim.from.target, resetAnim.to.target, e);
+    if (resetAnim.t >= 1) resetAnim = null;
+  }
+  if (now < introUntil) {
+    // ease in over the first second, glide, then ease out over the last three
+    const left = (introUntil - now) / 1000, elapsed = 10 - left;
+    const k = Math.min(1, elapsed / 1) * Math.min(1, left / 3);
+    controls.autoRotate = true; controls.autoRotateSpeed = 1.6 * k * k * (3 - 2 * k);
+  } else if (!SNAPSHOT && !busy && !speaking && now - lastInteraction > 20000) {
+    controls.autoRotate = true; controls.autoRotateSpeed = 0.35;
+  } else if (controls.autoRotate && introUntil && now >= introUntil) {
+    controls.autoRotate = false; introUntil = 0;
+  }
+  controls.update(dt);
 
   ring2.rotation.z = t * 0.25;
   ring1.material.color.setRGB(1.9, 0.75 + Math.sin(t * 1.3) * 0.15, 0.3);

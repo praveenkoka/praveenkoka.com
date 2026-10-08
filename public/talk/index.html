@@ -56,6 +56,23 @@
 
   <p id="hint" class="hint">Drag to swivel &middot; right-drag to pan &middot; scroll to zoom</p>
 
+  <div id="view-ctrl" class="view-ctrl" role="group" aria-label="Camera controls">
+    <button type="button" data-act="zoom" data-dir="1" aria-label="Zoom in" title="Zoom in"><svg viewBox="0 0 24 24"><path d="M12 6v12M6 12h12"/></svg></button>
+    <button type="button" data-act="zoom" data-dir="-1" aria-label="Zoom out" title="Zoom out"><svg viewBox="0 0 24 24"><path d="M6 12h12"/></svg></button>
+    <span class="sep" aria-hidden="true"></span>
+    <button type="button" data-act="rotate" data-dir="-1" aria-label="Rotate left" title="Rotate left"><svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 1 2.3 5.7"/><path d="M4 18v-6h6"/></svg></button>
+    <button type="button" data-act="rotate" data-dir="1" aria-label="Rotate right" title="Rotate right"><svg viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 0-2.3 5.7"/><path d="M20 18v-6h-6"/></svg></button>
+    <span class="sep" aria-hidden="true"></span>
+    <div class="pad" role="group" aria-label="Pan">
+      <button type="button" class="up" data-act="pan-y" data-dir="1" aria-label="Pan up" title="Pan up"><svg viewBox="0 0 24 24"><path d="m7 14 5-5 5 5"/></svg></button>
+      <button type="button" class="lt" data-act="pan-x" data-dir="-1" aria-label="Pan left" title="Pan left"><svg viewBox="0 0 24 24"><path d="m14 7-5 5 5 5"/></svg></button>
+      <button type="button" class="rt" data-act="pan-x" data-dir="1" aria-label="Pan right" title="Pan right"><svg viewBox="0 0 24 24"><path d="m10 7 5 5-5 5"/></svg></button>
+      <button type="button" class="dn" data-act="pan-y" data-dir="-1" aria-label="Pan down" title="Pan down"><svg viewBox="0 0 24 24"><path d="m7 10 5 5 5-5"/></svg></button>
+    </div>
+    <span class="sep" aria-hidden="true"></span>
+    <button type="button" data-act="reset" aria-label="Reset view" title="Reset view"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3"/></svg></button>
+  </div>
+
   <div id="caption" class="caption" aria-live="polite"><p class="q" id="cap-q"></p><p class="a" id="cap-a"></p></div>
 
   <form id="ask" class="ask" autocomplete="off">

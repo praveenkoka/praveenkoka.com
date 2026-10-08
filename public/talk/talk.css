@@ -29,6 +29,20 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .hint.gone { opacity: 0; }
 @media (max-width: 640px) { .hint { top: 72px; } }
 
+/* view controls */
+.view-ctrl { position: fixed; right: max(16px, env(safe-area-inset-right)); top: 50%; transform: translateY(-50%); z-index: 5; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px; border-radius: 22px; background: var(--glass); border: 1px solid var(--line); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); user-select: none; -webkit-user-select: none; touch-action: none; }
+.view-ctrl button { width: 36px; height: 36px; border: 0; border-radius: 50%; background: transparent; display: inline-flex; align-items: center; justify-content: center; color: var(--ink); opacity: .82; transition: background .15s, opacity .15s; }
+.view-ctrl button:hover, .view-ctrl button:focus-visible { background: rgba(255,255,255,.12); opacity: 1; outline: none; }
+.view-ctrl button:active { background: rgba(255,192,122,.22); }
+.view-ctrl svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.view-ctrl .sep { width: 18px; height: 1px; margin: 4px 0; background: var(--line); }
+.view-ctrl .pad { display: grid; grid-template-columns: repeat(3, 24px); grid-template-rows: repeat(3, 24px); }
+.view-ctrl .pad button { width: 24px; height: 24px; }
+.view-ctrl .pad svg { width: 14px; height: 14px; }
+.view-ctrl .pad .up { grid-column: 2; grid-row: 1; } .view-ctrl .pad .lt { grid-column: 1; grid-row: 2; }
+.view-ctrl .pad .rt { grid-column: 3; grid-row: 2; } .view-ctrl .pad .dn { grid-column: 2; grid-row: 3; }
+@media (max-width: 640px) { .view-ctrl { right: 10px; top: 38%; padding: 4px; } .view-ctrl button { width: 34px; height: 34px; } .view-ctrl .pad { grid-template-columns: repeat(3, 30px); grid-template-rows: repeat(3, 30px); } .view-ctrl .pad button { width: 30px; height: 30px; } }
+
 /* caption */
 .caption { position: fixed; left: 50%; transform: translateX(-50%); bottom: 190px; width: min(640px, calc(100% - 32px)); text-align: center; z-index: 4; pointer-events: none; transition: opacity .3s; }
 .caption .q { font-size: 13px; color: var(--mut); margin-bottom: 8px; min-height: 1em; }
