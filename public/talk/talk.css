@@ -24,6 +24,11 @@ button { font: inherit; color: inherit; cursor: pointer; }
 #mute[aria-pressed="true"] .x { display: inline; }
 #mute[aria-pressed="true"] .wave { display: none; }
 
+/* orbit hint */
+.hint { position: fixed; top: max(24px, env(safe-area-inset-top)); left: 50%; transform: translateX(-50%); z-index: 4; padding: 8px 14px; border-radius: 999px; background: var(--glass); border: 1px solid var(--line); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); font-family: var(--font-d); font-size: 12.5px; letter-spacing: .04em; color: var(--mut); pointer-events: none; transition: opacity .6s; white-space: nowrap; }
+.hint.gone { opacity: 0; }
+@media (max-width: 640px) { .hint { top: 72px; } }
+
 /* caption */
 .caption { position: fixed; left: 50%; transform: translateX(-50%); bottom: 190px; width: min(640px, calc(100% - 32px)); text-align: center; z-index: 4; pointer-events: none; transition: opacity .3s; }
 .caption .q { font-size: 13px; color: var(--mut); margin-bottom: 8px; min-height: 1em; }

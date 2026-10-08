@@ -1,5 +1,8 @@
-// POST /api/tts  { text }  ->  streamed 16-bit PCM from Google Gemini TTS (default), or mp3 from Sarvam when TTS_PROVIDER=sarvam
-const PROVIDER = process.env.TTS_PROVIDER || "google";
+// POST /api/tts  { text }  ->  streamed 16-bit PCM (24 kHz mono).
+// Murf Falcon when MURF_API_KEY is set (default), else Google Gemini TTS; mp3 from Sarvam when TTS_PROVIDER=sarvam.
+const PROVIDER = process.env.TTS_PROVIDER || (process.env.MURF_API_KEY ? "murf" : "google");
+const MURF_VOICE = process.env.MURF_VOICE || "en-US-wayne";
+const MURF_STYLE = process.env.MURF_STYLE || "Conversational";
 const GOOGLE_MODEL = process.env.GOOGLE_TTS_MODEL || "gemini-3.8-flash-lite-tts";
 const GOOGLE_VOICE = process.env.GOOGLE_TTS_VOICE || "Charon";
 const SARVAM_SPEAKER = process.env.SARVAM_SPEAKER || "kabir";
@@ -54,6 +57,34 @@ async function googleStream(text, res) {
   res.end();
 }
 
+// Murf Falcon streams a WAV; strip the header and forward the raw PCM as it arrives.
+async function murfStream(text, res) {
+  const r = await fetch("https://global.api.murf.ai/v1/speech/stream", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "api-key": process.env.MURF_API_KEY },
+    body: JSON.stringify({ text, voiceId: MURF_VOICE, style: MURF_STYLE, model: "FALCON", format: "WAV", sampleRate: 24000, channelType: "MONO" }),
+  });
+  if (!r.ok || !r.body) throw new Error("murf http " + r.status + " " + (await r.text()).slice(0, 200));
+  res.setHeader("Content-Type", "audio/L16;rate=24000;channels=1");
+  res.setHeader("Cache-Control", "no-store");
+  res.status(200);
+  let head = Buffer.alloc(0), inData = false, odd = null;
+  for await (const chunk of r.body) {
+    let buf = Buffer.from(chunk);
+    if (!inData) {
+      head = Buffer.concat([head, buf]);
+      const at = head.indexOf("data");
+      if (at < 0 || head.length < at + 8) continue;
+      buf = head.subarray(at + 8);
+      inData = true;
+    }
+    if (odd) { buf = Buffer.concat([odd, buf]); odd = null; }
+    if (buf.length % 2) { odd = buf.subarray(buf.length - 1); buf = buf.subarray(0, buf.length - 1); }
+    if (buf.length) res.write(buf);
+  }
+  res.end();
+}
+
 async function sarvam(text) {
   const r = await fetch("https://api.sarvam.ai/text-to-speech", {
     method: "POST",
@@ -68,13 +99,15 @@ async function sarvam(text) {
 export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).json({ error: "POST only" });
   const useSarvam = PROVIDER === "sarvam" && process.env.SARVAM_API_KEY;
-  if (!useSarvam && !process.env.GEMINI_API_KEY) return res.status(501).json({ error: "tts not configured" });
+  const useMurf = PROVIDER === "murf" && process.env.MURF_API_KEY;
+  if (!useSarvam && !useMurf && !process.env.GEMINI_API_KEY) return res.status(501).json({ error: "tts not configured" });
   const ip = (req.headers["x-forwarded-for"] || "").split(",")[0].trim() || "local";
   if (limited(ip)) return res.status(429).json({ error: "slow down" });
   const text = String(req.body?.text || "").slice(0, 500).trim();
   if (!text) return res.status(400).json({ error: "text required" });
 
   try {
+    if (useMurf) return await murfStream(text, res);
     if (!useSarvam) return await googleStream(text, res);
     const out = await sarvam(text);
     res.setHeader("Content-Type", out.type);

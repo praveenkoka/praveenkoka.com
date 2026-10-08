@@ -2,7 +2,7 @@
 import { PERSONA } from "./_persona.mjs";
 
 const MODEL = process.env.CHAT_MODEL || "gemini-3.5-flash-lite";
-const GESTURES = ["none", "wave", "nod", "acknowledge", "dance"];
+const GESTURES = ["none", "nod", "acknowledge", "dance"];
 
 // Best-effort per-instance rate limit: 20 requests per IP per 10 minutes.
 const hits = new Map();
