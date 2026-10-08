@@ -477,7 +477,10 @@ const store = {
 };
 const saved = store.load();
 const history = Array.isArray(saved.history) ? saved.history.filter((m) => m && typeof m.text === "string").slice(-30) : [];
-function persist() { store.save({ history: history.slice(-30), muted }); }
+// anonymous conversation id, used only to group a visitor's exchanges in the chat log
+const newSid = () => (crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2) + Date.now().toString(36));
+let sid = typeof saved.sid === "string" && /^[a-zA-Z0-9-]{8,64}$/.test(saved.sid) ? saved.sid : newSid();
+function persist() { store.save({ history: history.slice(-30), muted, sid }); }
 const capQ = $("cap-q"), capA = $("cap-a");
 let busy = false;
 
@@ -499,7 +502,7 @@ async function ask(question) {
   $("reset").hidden = false;
   let reply = "Hmm, I lost my train of thought. Try again?", g = "none";
   try {
-    const r = await fetch("/api/chat/", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ messages: history.slice(-8) }) });
+    const r = await fetch("/api/chat/", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ messages: history.slice(-8), sid }) });
     const d = await r.json();
     if (d.reply) { reply = d.reply; g = d.gesture || "none"; }
   } catch (e) { console.warn(e); }
@@ -586,6 +589,7 @@ function ready() {
 
 $("reset").addEventListener("click", () => {
   stopSpeaking(); settle();
+  sid = newSid();
   history.length = 0;
   history.push({ role: "model", text: HELLO });
   persist();

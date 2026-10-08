@@ -2,6 +2,7 @@
 // Spend is kept in hourly buckets that expire after 25 hours, so "the last 24 hours" is the sum of
 // the current bucket and the 23 before it, and we can say how long until enough of it ages out.
 // Without KV_REST_API_URL / KV_REST_API_TOKEN it falls back to per-instance memory (local dev).
+import { redis, kvConfigured } from "./_kv.mjs";
 
 export const DAILY_CAP_USD = Number(process.env.DAILY_AI_BUDGET_USD || 1);
 
@@ -21,28 +22,16 @@ export function ttsCost(usage = {}) {
   return ((usage.promptTokenCount || 0) * PRICE.ttsIn + (usage.candidatesTokenCount || 0) * PRICE.ttsOut) / 1e6;
 }
 
-const URL_ = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
-const TOKEN = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
 const HOUR = 3600 * 1000;
 const key = (h) => `ai-spend:${h}`;
 const mem = new Map();
-if (!URL_ || !TOKEN) console.warn("[budget] no KV store configured; tracking spend per instance only");
-
-async function redis(cmds) {
-  const r = await fetch(`${URL_}/pipeline`, {
-    method: "POST",
-    headers: { Authorization: `Bearer ${TOKEN}`, "Content-Type": "application/json" },
-    body: JSON.stringify(cmds),
-  });
-  if (!r.ok) throw new Error("kv " + r.status);
-  return (await r.json()).map((x) => x.result);
-}
+if (!kvConfigured) console.warn("[budget] no KV store configured; tracking spend per instance only");
 
 // Spend per hour bucket for the last 24 hours, oldest first.
 async function buckets() {
   const now = Math.floor(Date.now() / HOUR);
   const hours = Array.from({ length: 24 }, (_, i) => now - 23 + i);
-  if (!URL_ || !TOKEN) return hours.map((h) => mem.get(h) || 0);
+  if (!kvConfigured) return hours.map((h) => mem.get(h) || 0);
   const [vals] = await redis([["MGET", ...hours.map(key)]]);
   return vals.map((v) => Number(v) || 0);
 }
@@ -68,7 +57,7 @@ export async function recordSpend(usd) {
   if (!(usd > 0)) return;
   const h = Math.floor(Date.now() / HOUR);
   try {
-    if (!URL_ || !TOKEN) { mem.set(h, (mem.get(h) || 0) + usd); return; }
+    if (!kvConfigured) { mem.set(h, (mem.get(h) || 0) + usd); return; }
     await redis([["INCRBYFLOAT", key(h), usd.toFixed(8)], ["EXPIRE", key(h), 25 * 3600]]);
   } catch (e) {
     console.error("[budget] record failed", e);

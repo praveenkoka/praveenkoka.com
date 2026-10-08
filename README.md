@@ -20,6 +20,14 @@ A three.js avatar (`public/talk/`) in front of a Gemini-generated rooftop (`publ
 
 Env: `GEMINI_API_KEY` (required, chat), `MURF_API_KEY` (voice), `KV_REST_API_URL` + `KV_REST_API_TOKEN` (Upstash Redis, for the spend cap).
 
-**Spend cap:** `api/_budget.mjs` tracks Gemini spend (chat, plus Google TTS if used) in hourly Redis buckets and caps it at `DAILY_AI_BUDGET_USD` (default $1) over a rolling 24 hours. Over the cap, or if Gemini reports its quota is exhausted, the avatar answers "Sorry, I'm out of tokens for now. Come back in X hours." Murf errors (e.g. the free plan running out) fall back to silent captions, never to paid TTS. Visitor messages are capped at about 60 tokens (240 characters) on the page and the server. Local: put it in `.env.local`, then `node --env-file=.env.local scripts/dev.mjs` and open http://localhost:3000.
+**Spend cap:** `api/_budget.mjs` tracks Gemini spend (chat, plus Google TTS if used) in hourly Redis buckets and caps it at `DAILY_AI_BUDGET_USD` (default $1) over a rolling 24 hours. Over the cap, or if Gemini reports its quota is exhausted, the avatar answers "Sorry, I'm out of tokens for now. Come back in X hours." Murf errors (e.g. the free plan running out) fall back to silent captions, never to paid TTS. Visitor messages are capped at about 60 tokens (240 characters) on the page and the server.
+
+**Chat log:** `api/_chatlog.mjs` stores each exchange anonymously in Upstash (time, question, answer, gesture, country; no IPs), grouped by a random per-browser conversation id. It stays inside the free tier: 4 commands per exchange, at most 4,000 conversations x 40 exchanges, 60-day expiry, oldest conversations deleted first when the cap is reached. Read it with:
+
+```
+vercel env pull .env.chats --environment=production --yes
+node --env-file=.env.chats scripts/chats.mjs 20
+rm .env.chats
+``` Local: put it in `.env.local`, then `node --env-file=.env.local scripts/dev.mjs` and open http://localhost:3000.
 
 The bottom-right widget on the home and writing pages (`public/talk-widget.js`, `avatar-widget.jpg`) links to `/talk/`.
