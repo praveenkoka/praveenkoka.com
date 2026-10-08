@@ -8,6 +8,17 @@ const GOOGLE_MODEL = process.env.GOOGLE_TTS_MODEL || "gemini-3.8-flash-lite-tts"
 const GOOGLE_VOICE = process.env.GOOGLE_TTS_VOICE || "Charon";
 const SARVAM_SPEAKER = process.env.SARVAM_SPEAKER || "kabir";
 
+// Spoken forms for names the voices tend to spell out letter by letter. Captions keep the written form.
+const SAY = [
+  [/\bMurf\.ai\b/gi, "Murph dot A I"],
+  [/\bMurf\b/gi, "Murph"],
+  [/\bthree\.js\b/gi, "three J S"],
+  [/\bffmpeg\b/gi, "F F mpeg"],
+  [/\bOpenClaw\b/g, "Open Claw"],
+  [/\bRAG\b/g, "rag"],
+];
+const forSpeech = (t) => SAY.reduce((s, [re, to]) => s.replace(re, to), t);
+
 // Best-effort per-instance rate limit: 25 requests per IP per 10 minutes.
 const hits = new Map();
 function limited(ip) {
@@ -107,7 +118,7 @@ export default async function handler(req, res) {
   if (!useSarvam && !useMurf && !process.env.GEMINI_API_KEY) return res.status(501).json({ error: "tts not configured" });
   const ip = (req.headers["x-forwarded-for"] || "").split(",")[0].trim() || "local";
   if (limited(ip)) return res.status(429).json({ error: "slow down" });
-  const text = String(req.body?.text || "").slice(0, 500).trim();
+  const text = forSpeech(String(req.body?.text || "").slice(0, 500).trim());
   if (!text) return res.status(400).json({ error: "text required" });
 
   try {
