@@ -3,6 +3,7 @@ import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { MeshoptDecoder } from "three/addons/libs/meshopt_decoder.module.js";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
+import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.js";
 import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
 import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
@@ -10,7 +11,11 @@ import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
 
 const $ = (id) => document.getElementById(id);
 const params = new URLSearchParams(location.search);
-const SNAPSHOT = params.get("snapshot") === "1"; // used to render the widget image
+const SNAPSHOT = params.get("snapshot") === "1";
+if (params.get("demo")) { // test hook: surface errors in the title for headless checks
+  addEventListener("error", (e) => (document.title = "ERR " + e.message));
+  addEventListener("unhandledrejection", (e) => (document.title = "REJ " + (e.reason?.message || e.reason)));
+} // used to render the widget image
 
 /* ============ renderer, scene, camera ============ */
 const canvas = $("scene");
@@ -108,6 +113,40 @@ pGeo.setAttribute("position", new THREE.BufferAttribute(pos, 3));
 pGeo.setAttribute("color", new THREE.BufferAttribute(col, 3));
 const particles = new THREE.Points(pGeo, new THREE.PointsMaterial({ size: 0.022, vertexColors: true, transparent: true, opacity: 0.8, depthWrite: false, blending: THREE.AdditiveBlending, toneMapped: false }));
 scene.add(particles);
+
+/* ============ boombox (appears for dances and declined physical requests) ============ */
+const boombox = new THREE.Group();
+const speakerCones = [], speakerCaps = [];
+{
+  const metal = new THREE.MeshStandardMaterial({ color: 0x17181f, metalness: 0.6, roughness: 0.38 });
+  const chrome = new THREE.MeshStandardMaterial({ color: 0xd8dce6, metalness: 1, roughness: 0.22 });
+  const rubber = new THREE.MeshStandardMaterial({ color: 0x0b0b0f, roughness: 0.85 });
+  const body = new THREE.Mesh(new RoundedBoxGeometry(0.64, 0.36, 0.2, 4, 0.045), metal);
+  body.castShadow = true;
+  boombox.add(body);
+  for (const x of [-0.18, 0.18]) {
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(0.098, 0.012, 12, 48), chrome);
+    ring.position.set(x, -0.02, 0.102);
+    const cone = new THREE.Mesh(new THREE.CylinderGeometry(0.088, 0.04, 0.03, 40), rubber);
+    cone.rotation.x = Math.PI / 2; cone.position.set(x, -0.02, 0.09);
+    const cap = new THREE.Mesh(new THREE.SphereGeometry(0.026, 20, 12), new THREE.MeshBasicMaterial({ color: new THREE.Color(1.8, 0.6, 0.25), toneMapped: false }));
+    cap.position.set(x, -0.02, 0.108);
+    boombox.add(ring, cone, cap);
+    speakerCones.push(cone); speakerCaps.push(cap);
+  }
+  const display = new THREE.Mesh(new THREE.PlaneGeometry(0.16, 0.05), new THREE.MeshBasicMaterial({ color: new THREE.Color(0.4, 1.4, 1.6), toneMapped: false }));
+  display.position.set(0, 0.105, 0.101);
+  const deck = new THREE.Mesh(new THREE.PlaneGeometry(0.12, 0.09), new THREE.MeshStandardMaterial({ color: 0x2a2c36, metalness: 0.3, roughness: 0.5 }));
+  deck.position.set(0, -0.03, 0.101);
+  const handle = new THREE.Mesh(new THREE.TorusGeometry(0.2, 0.014, 10, 40, Math.PI), chrome);
+  handle.position.y = 0.18;
+  const antenna = new THREE.Mesh(new THREE.CylinderGeometry(0.004, 0.004, 0.42, 8), chrome);
+  antenna.position.set(0.24, 0.36, -0.04); antenna.rotation.z = -0.5;
+  boombox.add(display, deck, handle, antenna);
+}
+boombox.visible = false;
+scene.add(boombox);
+let boom = null; // { start, end } while it is on stage
 
 /* ============ post ============ */
 const composer = new EffectComposer(renderer);
@@ -481,6 +520,81 @@ function stopSpeaking() {
   speaking = false; mode = null; clearTargets();
 }
 
+/* ============ music for the boombox ============ */
+// A random slice of one of two trap beats, sized to the action, fading in and out.
+// It plays at a solid level but ducks under his voice, and never feeds the lip-sync analyser.
+const TRACKS = ["/talk/assets/music/trap-1.mp3", "/talk/assets/music/trap-2.mp3"];
+const MUSIC_LEVEL = 0.5, MUSIC_DUCKED = 0.2;
+const trackBufs = {};
+let trackTurn = Math.floor(Math.random() * TRACKS.length), musicGain = null, musicAnalyser = null, musicData = null, music = null, musicTargetNow = -1;
+const musicTarget = () => (muted ? 0 : speaking ? MUSIC_DUCKED : MUSIC_LEVEL);
+function loadTrack(url) {
+  if (!trackBufs[url]) trackBufs[url] = fetch(url).then((r) => r.arrayBuffer()).then((b) => audioCtx.decodeAudioData(b));
+  return trackBufs[url];
+}
+async function playMusic(ms) {
+  if (!audioCtx || muted) return;
+  if (!musicGain) {
+    musicGain = audioCtx.createGain(); musicGain.gain.value = 0;
+    musicAnalyser = audioCtx.createAnalyser(); musicAnalyser.fftSize = 512; musicData = new Uint8Array(musicAnalyser.fftSize);
+    musicGain.connect(musicAnalyser); musicAnalyser.connect(audioCtx.destination);
+  }
+  trackTurn = (trackTurn + 1) % TRACKS.length;
+  let buf;
+  try { buf = await loadTrack(TRACKS[trackTurn]); } catch (e) { console.warn(e); return; }
+  stopMusic(0.1);
+  const dur = Math.min(ms / 1000, buf.duration - 0.3);
+  const offset = Math.random() * Math.max(0, buf.duration - dur - 0.2);
+  const src = audioCtx.createBufferSource();
+  src.buffer = buf; src.connect(musicGain);
+  const t0 = audioCtx.currentTime, g = musicGain.gain;
+  g.cancelScheduledValues(t0); g.setValueAtTime(0, t0);
+  musicTargetNow = musicTarget(); g.linearRampToValueAtTime(musicTargetNow, t0 + 0.25);
+  src.start(t0, offset, dur + 0.1);
+  music = { src, until: t0 + dur };
+  src.onended = () => { if (music?.src === src) music = null; };
+}
+function stopMusic(fade = 0.3) {
+  if (!music) return;
+  const t = audioCtx.currentTime;
+  musicGain.gain.cancelScheduledValues(t); musicGain.gain.setTargetAtTime(0, t, fade / 3);
+  try { music.src.stop(t + fade); } catch {}
+  music = null;
+}
+function tickMusic() { // duck under speech, fade out at the end
+  if (!music || !audioCtx) return;
+  const t = audioCtx.currentTime, g = musicGain.gain;
+  if (t >= music.until - 0.6) { if (musicTargetNow !== 0) { g.cancelScheduledValues(t); g.setTargetAtTime(0, t, 0.18); musicTargetNow = 0; } return; }
+  const want = musicTarget();
+  if (want !== musicTargetNow) { g.cancelScheduledValues(t); g.setTargetAtTime(want, t, 0.12); musicTargetNow = want; }
+}
+function musicLevel() {
+  if (!music || !musicAnalyser) return 0;
+  musicAnalyser.getByteTimeDomainData(musicData);
+  let sum = 0;
+  for (let i = 0; i < musicData.length; i++) { const v = (musicData[i] - 128) / 128; sum += v * v; }
+  return Math.min(1, Math.sqrt(sum / musicData.length) * 3.5);
+}
+function boomboxOn(ms) {
+  const side = new THREE.Vector3(1.2, 0, 0.45).applyAxisAngle(UP, facing);
+  boombox.position.set(side.x, 0.14, side.z);
+  boombox.rotation.y = facing - 0.4;
+  boombox.visible = true;
+  boom = { start: performance.now(), end: performance.now() + ms };
+  playMusic(ms);
+}
+function tickBoombox(now) {
+  if (!boom) return;
+  const t = (now - boom.start) / 1000, left = (boom.end - now) / 1000;
+  if (left <= 0) { boombox.visible = false; boom = null; return; }
+  const k = Math.min(1, t / 0.45), back = 1 + 2.2 * Math.pow(k - 1, 3) + 1.2 * Math.pow(k - 1, 2); // ease-out-back pop in
+  const s = left < 0.35 ? Math.max(0, left / 0.35) : back;
+  const lvl = musicLevel();
+  boombox.scale.setScalar(Math.max(0.001, s * (1 + lvl * 0.05)));
+  for (const c of speakerCones) c.scale.set(1 + lvl * 0.3, 1 + lvl * 1.5, 1 + lvl * 0.3);
+  for (const c of speakerCaps) c.material.color.setRGB(1.2 + lvl * 1.4, 0.4 + lvl * 0.6, 0.2 + lvl * 0.3);
+}
+
 /* ============ facing ============ */
 let facing = 0, facingTarget = 0;
 function faceVisitor() { facingTarget = Math.atan2(camera.position.x - controls.target.x, camera.position.z - controls.target.z); }
@@ -497,8 +611,10 @@ function gesture(g) {
   else if (g === "dance") { // a different dance each time
     danceIndex = (danceIndex + 1) % DANCES.length; currentDance = DANCES[danceIndex];
     jumpingUntil = 0; dancingUntil = now + 10000; play(currentDance, 0.4); setTimeout(settle, 10100);
+    boomboxOn(10000);
   } else if (g === "jumprope") { // declining something physical, while doing something physical
     dancingUntil = 0; jumpingUntil = now + 6000; play("Jumping Rope", 0.35); setTimeout(settle, 6100);
+    boomboxOn(6000);
   }
 }
 
@@ -580,7 +696,7 @@ $("mute").addEventListener("click", () => {
   muted = !muted;
   $("mute").setAttribute("aria-pressed", String(muted));
   $("mute").setAttribute("aria-label", muted ? "Unmute voice" : "Mute voice");
-  if (muted) stopSpeaking(), settle();
+  if (muted) { stopSpeaking(); settle(); stopMusic(); }
   persist();
 });
 
@@ -605,7 +721,35 @@ function ensureAudio() {
   analyser.connect(audioCtx.destination);
 }
 
-const HELLO = "Hey, I'm Praveen. Well, the 3D version. Ask me about AI, startups, or what I'm building.";
+const HELLO = "Hey, I'm Praveen's AI avatar. Full disclosure: the real Praveen is kind of boring. He just writes code and builds businesses. I'm the fun one. Ask me anything!";
+
+// The intro is pre-recorded (same voice) so it plays instantly and costs nothing per visit.
+let introAudio = null;
+const prefetchIntro = () => (introAudio = introAudio || fetch("/talk/assets/intro.mp3?v=1").then((r) => r.arrayBuffer()).catch(() => null));
+async function speakIntro() {
+  if (busy) return;
+  ensureAudio();
+  stopSpeaking();
+  speechText = HELLO;
+  const myTurn = ++turn;
+  if (muted) { await fakeSpeak(HELLO); return; }
+  const buf = await prefetchIntro();
+  if (myTurn !== turn) return;
+  if (!buf) { await fakeSpeak(HELLO); return; }
+  await playAudio(buf.slice(0), myTurn);
+}
+// Browsers only allow sound after the visitor interacts, so play it straight away if allowed,
+// otherwise on their first tap, drag or key press (unless that first action is asking something).
+function armIntro() {
+  ensureAudio();
+  if (audioCtx.state === "running") { speakIntro(); return; }
+  const first = (e) => {
+    window.removeEventListener("pointerdown", first, true); window.removeEventListener("keydown", first, true);
+    if (e.target.closest?.("#ask, #built, #reset, #mute")) return;
+    audioCtx.resume().then(speakIntro);
+  };
+  window.addEventListener("pointerdown", first, true); window.addEventListener("keydown", first, true);
+}
 function ready() {
   $("intro").classList.add("gone");
   if (!SNAPSHOT) introUntil = performance.now() + INTRO_MS;
@@ -622,8 +766,11 @@ function ready() {
     capQ.textContent = "";
     capA.textContent = HELLO;
     if (!history.length) { history.push({ role: "model", text: HELLO }); persist(); }
+    prefetchIntro();
+    armIntro();
   }
   faceVisitor();
+  if (params.get("demo") === "dance") { gesture("dance"); boom.end += 120000; dancingUntil += 120000; } // test hook: hold the dance and boombox for screenshots
 }
 
 $("reset").addEventListener("click", () => {
@@ -635,6 +782,7 @@ $("reset").addEventListener("click", () => {
   capQ.textContent = ""; capA.textContent = HELLO;
   $("reset").hidden = true;
   faceVisitor();
+  speakIntro();
 });
 
 /* ============ loop ============ */
@@ -667,6 +815,8 @@ renderer.setAnimationLoop(() => {
 
   directTalk();
   directIdle(now);
+  tickMusic();
+  tickBoombox(now);
   if (speaking && mode === "audio" && analyser) audioVisemes();
   else if (speaking && mode === "text") textVisemes(now);
   else clearTargets();
