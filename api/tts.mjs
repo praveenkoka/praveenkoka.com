@@ -19,7 +19,7 @@ const SAY = [
 ];
 const forSpeech = (t) => SAY.reduce((s, [re, to]) => s.replace(re, to), t);
 
-// Best-effort per-instance rate limit: 60 requests per IP per 10 minutes (above chat's 50, so the 429 reply is still spoken).
+// Best-effort per-instance rate limit: 60 requests per IP per 10 minutes (chat allows 50).
 const hits = new Map();
 function limited(ip) {
   const now = Date.now();

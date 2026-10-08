@@ -430,10 +430,18 @@ let audioCtx, muted = false, speaking = false, mode = null, dancingUntil = 0;
 // When the voice service is unavailable (e.g. the free Murf quota ran out), answer in captions
 // with the mouth still moving, and don't ask the server again for a while.
 let voiceDownUntil = 0;
-async function speak(text) {
+async function speak(text, clip) {
   stopSpeaking();
   speechText = text;
   const myTurn = ++turn;
+  if (clip && !muted) { // canned, pre-recorded reply (e.g. the rate-limit message)
+    try {
+      const r = await fetch(`/talk/assets/429/${clip.replace(/[^\w-]/g, "")}.mp3?v=1`);
+      if (r.ok) { const buf = await r.arrayBuffer(); if (myTurn === turn) await playAudio(buf, myTurn); return; }
+    } catch (e) { console.warn(e); }
+    if (myTurn === turn) await fakeSpeak(text);
+    return;
+  }
   if (muted || performance.now() < voiceDownUntil) { await fakeSpeak(text); return; }
   try {
     const r = await fetch("/api/tts/", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text }) });
@@ -650,11 +658,11 @@ async function ask(question) {
   capA.innerHTML = '<span class="dots"><span></span><span></span><span></span></span>';
   history.push({ role: "user", text: question });
   $("reset").hidden = false;
-  let reply = "Hmm, I lost my train of thought. Try again?", g = "none";
+  let reply = "Hmm, I lost my train of thought. Try again?", g = "none", clip = null;
   try {
     const r = await fetch("/api/chat/", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ messages: history.slice(-8), sid }) });
     const d = await r.json();
-    if (d.reply) { reply = d.reply; g = d.gesture || "none"; }
+    if (d.reply) { reply = d.reply; g = d.gesture || "none"; clip = d.clip || null; }
   } catch (e) { console.warn(e); }
   history.push({ role: "model", text: reply });
   persist();
@@ -662,7 +670,7 @@ async function ask(question) {
   gesture(g);
   setBusy(false);
   $("q").focus({ preventScroll: true });
-  await speak(reply);
+  await speak(reply, clip);
 }
 
 // keep the caption (and the wide chip column) just above the input block, whatever its height
