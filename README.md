@@ -13,7 +13,7 @@ Local preview: `npx serve public`
 
 ## Talk to Praveen (`/talk/`)
 
-A three.js avatar (`public/talk/`) in one of four Gemini-generated worlds (`public/talk/assets/worlds/`: Bengaluru rooftop, Berlin park, basketball arena centre court, drum studio; made by `scripts/gen-world.mjs <world>`, picked with the globe button, remembered per browser, `?world=` to link one; each wrapped 360° with mirrored copies, four for the studio so it sits in proportion; drag to swivel, right-drag to pan, scroll to zoom), with two Vercel functions:
+A three.js avatar (`public/talk/`) in one of four Gemini-generated worlds (`public/talk/assets/worlds/`: Bengaluru rooftop, Berlin park, basketball arena centre court, drum studio; made by `scripts/gen-world.mjs <world>`, switched with the next-world thumbnail in the top bar, remembered per browser, `?world=` to link one; each wrapped 360° with mirrored copies, four for the studio so it sits in proportion; drag to swivel, right-drag to pan, scroll to zoom), with two Vercel functions:
 
 - `api/chat.mjs`: Gemini chat with the persona and facts in `api/_persona.mjs`; returns `{ reply, gesture }`.
 - `api/tts.mjs`: streams 16-bit PCM. Default is Murf Falcon (`MURF_API_KEY`, `MURF_VOICE`, default `en-US-wayne`); without a Murf key it falls back to Google Gemini TTS (`GOOGLE_TTS_MODEL`, `GOOGLE_TTS_VOICE`). Set `TTS_PROVIDER=sarvam` and `SARVAM_API_KEY` to use Sarvam Bulbul v3.

@@ -116,7 +116,6 @@ async function setWorld(id, instant = false) {
   if (!WORLDS[id]) return;
   const mine = ++worldSwitch;
   worldId = id;
-  document.querySelectorAll("#worlds [data-world]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.world === id)));
   if (!instant) fadeWorld(0, 220);
   let tex;
   try { tex = await loadWorldTex(id); } catch (e) { console.warn(e); return; }
@@ -836,21 +835,21 @@ function ready() {
     armIntro();
   }
   faceVisitor();
-  if (params.get("demo") === "worlds") showWorlds(true); // test hook: picker open for screenshots
   if (params.get("demo") === "dance") { gesture("dance"); boom.end += 120000; dancingUntil += 120000; } // test hook: hold the dance and boombox for screenshots
 }
 
-// world switcher: a button in the top bar opens a small picker
-const worldsEl = $("worlds"), worldBtn = $("world-btn");
-const showWorlds = (open) => { worldsEl.hidden = !open; worldBtn.setAttribute("aria-expanded", String(open)); };
-worldBtn.addEventListener("click", (e) => { e.stopPropagation(); showWorlds(worldsEl.hidden); });
-worldsEl.addEventListener("click", (e) => {
-  const b = e.target.closest("[data-world]"); if (!b) return;
-  setWorld(b.dataset.world); persist(); showWorlds(false);
-});
-document.addEventListener("pointerdown", (e) => { if (!worldsEl.hidden && !e.target.closest("#worlds, #world-btn")) showWorlds(false); });
-document.addEventListener("keydown", (e) => { if (e.key === "Escape") showWorlds(false); });
-document.querySelectorAll("#worlds [data-world]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.world === worldId)));
+// world switcher: a thumbnail of the next world; tapping it goes there
+const worldBtn = $("world-btn"), WORLD_IDS = Object.keys(WORLDS);
+const nextWorld = () => WORLD_IDS[(WORLD_IDS.indexOf(worldId) + 1) % WORLD_IDS.length];
+function showNextWorld() {
+  const n = nextWorld();
+  worldBtn.querySelector("img").src = `/talk/assets/worlds/${n}-thumb.jpg?v=2`;
+  worldBtn.querySelector("span").textContent = WORLDS[n].label;
+  worldBtn.setAttribute("aria-label", `Switch world to ${WORLDS[n].label}`);
+  worldBtn.title = `Switch to ${WORLDS[n].label}`;
+}
+worldBtn.addEventListener("click", () => { setWorld(nextWorld()); persist(); showNextWorld(); });
+showNextWorld();
 // warm the cache for the other worlds once he is on stage
 setTimeout(() => Object.keys(WORLDS).forEach((id) => { if (id !== worldId) loadWorldTex(id).catch(() => {}); }), 6000);
 
