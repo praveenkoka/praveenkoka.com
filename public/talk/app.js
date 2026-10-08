@@ -256,10 +256,11 @@ loader.load(
   (err) => { console.error(err); $("intro-status").textContent = "Couldn't load the avatar. Try refreshing."; }
 );
 
-function play(name, fade = 0.35) {
+function play(name, fade = 0.35, randomStart = false) {
   const next = actions[name];
   if (!next || next === current) return;
   next.reset().setEffectiveWeight(1).fadeIn(fade).play();
+  if (randomStart) next.time = Math.random() * next.getClip().duration;
   if (current) current.fadeOut(fade);
   current = next;
 }
@@ -267,6 +268,42 @@ let talkFlip = false;
 function talkClip() { talkFlip = !talkFlip; return talkFlip ? "Talking" : "Talking 2"; }
 function settle() { play(speaking ? talkClip() : dancingUntil > performance.now() ? "Dancing" : "Breathing Idle"); }
 function onClipFinished() { settle(); }
+
+// While he speaks: alternate the two talking clips at (estimated) sentence breaks, switch anyway
+// before a clip visibly loops, and slip in at most one nod or acknowledgement per answer.
+const SPEECH_CPS = 14; // characters per second for the voice, used to estimate sentence timings
+let speechText = "", talkPlan = null;
+function planTalk(text) {
+  const breaks = [];
+  const re = /[.!?]+["')\]]?\s+/g;
+  let m;
+  while ((m = re.exec(text))) if (m.index + m[0].length < text.length - 4) breaks.push((m.index + m[0].length) / SPEECH_CPS);
+  talkPlan = { start: performance.now(), breaks, next: 0, lastSwitch: 0, gestured: false };
+}
+function switchTalk(atBreak) {
+  if (!talkPlan) return;
+  const elapsed = (performance.now() - talkPlan.start) / 1000;
+  talkPlan.lastSwitch = elapsed;
+  if (atBreak && !talkPlan.gestured && Math.random() < 0.3) {
+    talkPlan.gestured = true;
+    play(Math.random() < 0.5 ? "Head Nod Yes" : "Acknowledging", 0.3); // returns to talking when it finishes
+    return;
+  }
+  play(talkClip(), 0.45, true);
+}
+function directTalk() {
+  if (!speaking || !talkPlan || dancingUntil > performance.now() || !current) return;
+  const name = current.getClip().name;
+  if (!/^Talking/.test(name)) return; // let gestures finish
+  const elapsed = (performance.now() - talkPlan.start) / 1000;
+  const sinceSwitch = elapsed - talkPlan.lastSwitch;
+  if (talkPlan.next < talkPlan.breaks.length && elapsed >= talkPlan.breaks[talkPlan.next]) {
+    talkPlan.next++;
+    if (sinceSwitch >= 1.6) switchTalk(true);
+  } else if (sinceSwitch > Math.max(current.getClip().duration * 1.4, 3.5)) {
+    switchTalk(false);
+  }
+}
 
 /* ============ lip-sync ============ */
 const VIS = ["viseme_aa", "viseme_E", "viseme_I", "viseme_O", "viseme_U", "viseme_PP", "viseme_FF", "viseme_TH", "viseme_DD", "viseme_kk", "viseme_CH", "viseme_SS", "viseme_nn", "viseme_RR", "jawOpen", "mouthWide"];
@@ -331,6 +368,7 @@ let audioCtx, muted = false, speaking = false, mode = null, dancingUntil = 0;
 let voiceDownUntil = 0;
 async function speak(text) {
   stopSpeaking();
+  speechText = text;
   const myTurn = ++turn;
   if (muted || performance.now() < voiceDownUntil) { await fakeSpeak(text); return; }
   try {
@@ -405,11 +443,12 @@ function fakeSpeak(text) {
 
 function startTalking() {
   speaking = true;
+  planTalk(speechText);
   faceVisitor();
   if (dancingUntil > performance.now()) return;
   if (!current || !/Waving|Nod|Acknowledging/.test(current.getClip().name)) play(talkClip());
 }
-function stopTalking() { speaking = false; mode = null; clearTargets(); settle(); }
+function stopTalking() { speaking = false; mode = null; talkPlan = null; clearTargets(); settle(); }
 function stopSpeaking() {
   turn++;
   for (const src of scheduled) { try { src.stop(); } catch {} }
@@ -583,6 +622,7 @@ renderer.setAnimationLoop(() => {
     if (neckBone) neckBone.rotation.y += headYaw * 0.3;
   }
 
+  directTalk();
   if (speaking && mode === "audio" && analyser) audioVisemes();
   else if (speaking && mode === "text") textVisemes(now);
   else clearTargets();
