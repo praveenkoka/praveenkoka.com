@@ -27,7 +27,8 @@ button { font: inherit; color: inherit; cursor: pointer; }
 /* orbit hint */
 .hint { position: fixed; top: max(24px, env(safe-area-inset-top)); left: 50%; transform: translateX(-50%); z-index: 4; padding: 8px 14px; border-radius: 999px; background: var(--glass); border: 1px solid var(--line); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); font-family: var(--font-d); font-size: 12.5px; letter-spacing: .04em; color: var(--mut); pointer-events: none; transition: opacity .6s; white-space: nowrap; }
 .hint.gone { opacity: 0; }
-@media (max-width: 640px) { .hint { top: 72px; } }
+.hint .narrow { display: none; }
+@media (max-width: 640px) { .hint { top: 104px; font-size: 11.5px; } .hint .wide { display: none; } .hint .narrow { display: inline; } }
 
 /* view controls */
 .view-ctrl { position: fixed; right: max(20px, env(safe-area-inset-right)); top: calc(max(16px, env(safe-area-inset-top)) + 58px); z-index: 5; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px; border-radius: 22px; background: var(--glass); border: 1px solid var(--line); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); user-select: none; -webkit-user-select: none; touch-action: none; }
@@ -59,6 +60,20 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .chips button { font-family: var(--font-d); font-size: 13px; letter-spacing: 0.01em; padding: 8px 14px; border-radius: 999px; background: var(--glass); border: 1px solid var(--line); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); transition: border-color .2s, background .2s; }
 .chips button:hover { border-color: rgba(255,255,255,.5); background: rgba(20, 22, 44, .7); }
 .chips button:disabled { opacity: .4; cursor: default; }
+/* unexplored suggestions glow until they have been clicked once */
+.chips button.fresh { border-color: rgba(255, 192, 122, .7); animation: chip-glow 2.6s ease-in-out infinite; }
+.chips button.fresh:nth-child(2n) { animation-delay: .4s; } .chips button.fresh:nth-child(3n) { animation-delay: .9s; }
+@keyframes chip-glow {
+  0%, 100% { box-shadow: 0 0 0 1px rgba(255, 192, 122, .25), 0 0 10px rgba(255, 122, 89, .25); }
+  50% { box-shadow: 0 0 0 1px rgba(255, 192, 122, .6), 0 0 22px rgba(227, 79, 164, .55); }
+}
+/* built-with badge */
+.built { position: fixed; z-index: 5; left: max(20px, env(safe-area-inset-left)); bottom: max(22px, env(safe-area-inset-bottom)); display: inline-flex; align-items: center; gap: 10px; height: 40px; padding: 0 16px; border-radius: 999px; background: var(--glass); border: 1px solid var(--line); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); font-family: var(--font-d); font-size: 12.5px; letter-spacing: .02em; transition: border-color .2s, background .2s; }
+.built:hover, .built:focus-visible { border-color: rgba(255, 255, 255, .5); background: rgba(20, 22, 44, .7); outline: none; }
+.built-k { color: var(--mut); text-transform: uppercase; letter-spacing: .14em; font-size: 10.5px; }
+.built-v { color: var(--ink); }
+@media (max-width: 1180px) { .built { bottom: auto; top: calc(max(16px, env(safe-area-inset-top)) + 54px); left: max(20px, env(safe-area-inset-left)); height: 34px; padding: 0 12px; } }
+@media (max-width: 640px) { .built-k { display: none; } .built { font-size: 11.5px; top: calc(max(16px, env(safe-area-inset-top)) + 50px); } }
 .bar { display: flex; align-items: center; gap: 8px; padding: 6px 6px 6px 20px; border-radius: 999px; background: rgba(10, 12, 28, 0.7); border: 1px solid var(--line); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); box-shadow: 0 10px 40px rgba(0,0,0,.35); }
 .bar:focus-within { border-color: rgba(255, 192, 122, .6); }
 .bar input { flex: 1; min-width: 0; height: 44px; background: transparent; border: 0; outline: 0; color: var(--ink); font: 16px var(--font-b); }
@@ -105,6 +120,6 @@ button { font: inherit; color: inherit; cursor: pointer; }
   .back span { display: none; }
   .back { padding: 6px; }
 }
-@media (prefers-reduced-motion: reduce) { .dots span { animation: none; opacity: .6; } }
+@media (prefers-reduced-motion: reduce) { .dots span { animation: none; opacity: .6; } .chips button.fresh { animation: none; box-shadow: 0 0 14px rgba(255, 122, 89, .35); } }
 
 [hidden] { display: none !important; }

@@ -445,7 +445,7 @@ let busy = false;
 function setBusy(b) {
   busy = b;
   $("q").disabled = b; $("send").disabled = b || !$("q").value.trim();
-  document.querySelectorAll("#chips button").forEach((x) => (x.disabled = b));
+  document.querySelectorAll("#chips button, #built").forEach((x) => (x.disabled = b));
 }
 
 async function ask(question) {
@@ -486,7 +486,14 @@ function updateCount() {
   $("send").disabled = busy || !q.value.trim();
 }
 $("q").addEventListener("input", updateCount);
-$("chips").addEventListener("click", (e) => { const b = e.target.closest("button[data-q]"); if (b) ask(b.dataset.q); });
+// Suggestions glow until each has been tried once; remembered per browser.
+const TRIED = "pk-talk-tried";
+const tried = new Set((() => { try { return JSON.parse(localStorage.getItem(TRIED)) || []; } catch { return []; } })());
+function markTried(q) { tried.add(q); try { localStorage.setItem(TRIED, JSON.stringify([...tried])); } catch {} paintChips(); }
+function paintChips() { document.querySelectorAll("#chips button[data-q]").forEach((b) => b.classList.toggle("fresh", !tried.has(b.dataset.q))); }
+paintChips();
+$("chips").addEventListener("click", (e) => { const b = e.target.closest("button[data-q]"); if (!b || busy) return; markTried(b.dataset.q); ask(b.dataset.q); });
+$("built").addEventListener("click", () => { if (busy) return; markTried("How was this built?"); ask("How was this built?"); });
 
 $("mute").addEventListener("click", () => {
   muted = !muted;
@@ -521,7 +528,7 @@ const HELLO = "Hey, I'm Praveen. Well, the 3D version. Ask me about AI, startups
 function ready() {
   $("intro").classList.add("gone");
   if (!SNAPSHOT) introUntil = performance.now() + INTRO_MS;
-  if (SNAPSHOT) { document.querySelectorAll(".top,.ask,.caption,.hint").forEach((e) => (e.style.display = "none")); return; }
+  if (SNAPSHOT) { document.querySelectorAll(".top,.ask,.caption,.hint,.chips,.built,.view-ctrl").forEach((e) => (e.style.display = "none")); return; }
   $("q").disabled = false;
   if (saved.muted) { muted = true; $("mute").setAttribute("aria-pressed", "true"); $("mute").setAttribute("aria-label", "Unmute voice"); }
   const lastUser = [...history].reverse().find((m) => m.role === "user");
