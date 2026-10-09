@@ -614,14 +614,15 @@ async function playMusic(ms, genre) {
   try { buf = await loadTrack(list[trackTurn[genre]]); } catch (e) { console.warn(e); return; }
   stopMusic(0.1);
   const dur = Math.min(ms / 1000, buf.duration - 0.3);
-  const offset = Math.random() * Math.max(0, buf.duration - dur - 0.2);
+  // leave room after the slice so it can keep playing if he is still talking (see holdForSpeech)
+  const offset = Math.random() * Math.max(0, buf.duration - dur - 0.3 - MUSIC_SPARE);
   const src = audioCtx.createBufferSource();
   src.buffer = buf; src.connect(musicGain);
   const t0 = audioCtx.currentTime, g = musicGain.gain;
   g.cancelScheduledValues(t0); g.setValueAtTime(0, t0);
   musicTargetNow = musicTarget(); g.linearRampToValueAtTime(musicTargetNow, t0 + 0.25);
-  src.start(t0, offset, dur + 0.1);
-  music = { src, until: t0 + dur };
+  src.start(t0, offset);
+  music = { src, until: t0 + dur, last: t0 + buf.duration - offset - 0.3 };
   src.onended = () => { if (music?.src === src) music = null; };
 }
 function stopMusic(fade = 0.3) {
@@ -634,6 +635,7 @@ function stopMusic(fade = 0.3) {
 function tickMusic() { // duck under speech, fade out at the end
   if (!music || !audioCtx) return;
   const t = audioCtx.currentTime, g = musicGain.gain;
+  if (t >= music.until) { stopMusic(0.05); return; }
   if (t >= music.until - 0.6) { if (musicTargetNow !== 0) { g.cancelScheduledValues(t); g.setTargetAtTime(0, t, 0.18); musicTargetNow = 0; } return; }
   const want = musicTarget();
   if (want !== musicTargetNow) { g.cancelScheduledValues(t); g.setTargetAtTime(want, t, 0.12); musicTargetNow = want; }
@@ -653,10 +655,23 @@ function boomboxOn(ms, genre) {
   boom = { start: performance.now(), end: performance.now() + ms };
   playMusic(ms, genre);
 }
+// While he is still talking, keep the action, boombox and music going until a beat after he stops.
+const MUSIC_TAIL_MS = 2500, MUSIC_SPARE = 14; // seconds of track kept free for that
+function holdForSpeech(now) {
+  if (!boom || !speaking || boom.end >= now + MUSIC_TAIL_MS) return;
+  let until = now + MUSIC_TAIL_MS;
+  if (music) until = Math.min(until, now + (music.last - audioCtx.currentTime) * 1000); // never past the end of the track
+  if (until <= boom.end) return;
+  boom.end = until;
+  if (dancingUntil > now) dancingUntil = until;
+  if (jumpingUntil > now) jumpingUntil = until;
+  if (music) music.until = audioCtx.currentTime + (until - now) / 1000;
+}
 function tickBoombox(now) {
   if (!boom) return;
+  holdForSpeech(now);
   const t = (now - boom.start) / 1000, left = (boom.end - now) / 1000;
-  if (left <= 0) { boombox.visible = false; boom = null; return; }
+  if (left <= 0) { boombox.visible = false; boom = null; settle(); return; }
   const k = Math.min(1, t / 0.45), back = 1 + 2.2 * Math.pow(k - 1, 3) + 1.2 * Math.pow(k - 1, 2); // ease-out-back pop in
   const s = left < 0.35 ? Math.max(0, left / 0.35) : back;
   const lvl = musicLevel();
