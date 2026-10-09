@@ -12,7 +12,7 @@ const INDEX = "chats"; // sorted set: session id -> last activity (ms)
 
 export const validSid = (s) => typeof s === "string" && /^[a-zA-Z0-9-]{8,64}$/.test(s);
 
-export async function logExchange({ sid, question, reply, gesture, country, outOfTokens }) {
+export async function logExchange({ sid, question, reply, gesture, world, country, outOfTokens, rateLimited }) {
   if (!kvConfigured || !validSid(sid)) return;
   const now = Date.now();
   const entry = JSON.stringify({
@@ -20,8 +20,10 @@ export async function logExchange({ sid, question, reply, gesture, country, outO
     q: String(question || "").slice(0, 240),
     a: String(reply || "").slice(0, 400),
     ...(gesture && gesture !== "none" ? { g: gesture } : {}),
+    ...(world ? { w: world } : {}),
     ...(country ? { c: String(country).slice(0, 2) } : {}),
     ...(outOfTokens ? { o: 1 } : {}),
+    ...(rateLimited ? { r: 1 } : {}),
   });
   const key = `chat:${sid}`;
   try {

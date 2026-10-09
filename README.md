@@ -13,6 +13,8 @@ Local preview: `npx serve public`
 
 ## Talk to Praveen (`/talk/`)
 
+A private dashboard of the conversations lives at a secret path (env `INBOX_PATH`, basic auth with user `praveen` and env `INBOX_PASSWORD`; see `api/inbox.mjs`).
+
 A three.js avatar (`public/talk/`) in one of six Gemini-generated worlds (the chat moves him to Berlin, the gym, the startup office or the studio when the topic calls for it) (`public/talk/assets/worlds/`: Bengaluru rooftop, Berlin park, basketball arena centre court, drum studio, gym, startup office; made by `scripts/gen-world.mjs <world>`, switched with the next-world thumbnail in the top bar, remembered per browser, `?world=` to link one; each wrapped 360° with mirrored copies, four for the indoor rooms so they sit in proportion; drag to swivel, right-drag to pan, scroll to zoom), with two Vercel functions:
 
 - `api/chat.mjs`: Gemini chat with the persona and facts in `api/_persona.mjs`; returns `{ reply, gesture }`.

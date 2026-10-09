@@ -185,7 +185,7 @@ export default async function handler(req, res) {
     if (gesture === "exercise") gesture = exercise; // the page plays the matching clip
     const world = WORLDS.includes(out.world) && out.world !== "none" ? out.world : undefined;
     if (!reply) throw new Error("empty reply: " + JSON.stringify(data).slice(0, 300));
-    await Promise.all([spend, log(reply, gesture)]);
+    await Promise.all([spend, log(reply, gesture, { world })]);
     return res.status(200).json({ reply, gesture, world });
   } catch (e) {
     console.error(e);

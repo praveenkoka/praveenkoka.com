@@ -5,5 +5,11 @@
   "buildCommand": "",
   "outputDirectory": "public",
   "cleanUrls": true,
-  "trailingSlash": true
+  "trailingSlash": true,
+  "rewrites": [
+    {
+      "source": "/:slug(inbox-[a-z0-9]{24})",
+      "destination": "/api/inbox?slug=:slug"
+    }
+  ]
 }
