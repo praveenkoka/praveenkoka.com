@@ -656,7 +656,7 @@ function boomboxOn(ms, genre) {
   playMusic(ms, genre);
 }
 // While he is still talking, keep the action, boombox and music going until a beat after he stops.
-const MUSIC_TAIL_MS = 2500, MUSIC_SPARE = 14; // seconds of track kept free for that
+const MUSIC_TAIL_MS = 5000, MUSIC_SPARE = 16; // seconds of track kept free for that
 function holdForSpeech(now) {
   if (!boom || !speaking || boom.end >= now + MUSIC_TAIL_MS) return;
   let until = now + MUSIC_TAIL_MS;
