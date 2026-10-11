@@ -67,6 +67,7 @@ const ANGLE_RULE = "Use a fresh joke: never mention that the guitar, rope or equ
 const DANCE_RE = /\b(danc\w*|boogie|groove|bust a move|moves|twerk|shake it|celebrate|party)\b/i;
 const GUITAR_RE = /\b(guitar|shred\w*|riff\w*|rock out|solo)\b/i;
 const EXERCISE_RE = /\b(exercis\w*|work ?out|push[- ]?ups?|pushups?|squats?|jumping[- ]?jacks?|skip\w*|jump[- ]?rope|gym|lift\w*|cardio|run|sweat)\b/i;
+const TECH_RE = /\b(step[- ]?by[- ]?step|technical|tech stack|stack|components?|architecture|under the hood|lip[- ]?sync|how does (it|this|the \w+) work|in detail|detailed)\b/i;
 const pick = (a) => a[Math.floor(Math.random() * a.length)];
 
 // Best-effort per-instance rate limit: 50 requests per IP per 10 minutes.
@@ -153,6 +154,7 @@ export default async function handler(req, res) {
             // a random comedic angle per request, so repeat requests (and new visitors) hear different jokes
             DANCE_RE.test(question) && `If you dance, build the joke around this idea (in your own words): ${pick(DANCE_ANGLES)}. ${ANGLE_RULE}`,
             GUITAR_RE.test(question) && `If you play air guitar, build the joke around this idea (in your own words): ${pick(GUITAR_ANGLES)}. ${ANGLE_RULE}`,
+            TECH_RE.test(question) && "The visitor wants technical detail about how this avatar was built: give the deeper technical build answer, not the short one.",
             EXERCISE_RE.test(question) && `If you exercise, build the joke around this idea (in your own words): ${pick(EXERCISE_ANGLES)}. ${ANGLE_RULE}`,
           ].filter(Boolean).join("\n\n") }] },
           contents,
