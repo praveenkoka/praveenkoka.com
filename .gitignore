@@ -35,3 +35,6 @@ yarn-error.log*
 .contentlayer
 .env
 .vercel
+
+# private inbox login (never commit or deploy)
+.inbox-credentials.txt
