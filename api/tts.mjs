@@ -1,5 +1,6 @@
 // POST /api/tts  { text }  ->  streamed 16-bit PCM (24 kHz mono), or 503 when the voice is unavailable.
 import { checkBudget, recordSpend, ttsCost } from "./_budget.mjs";
+import { vertexFetch, vertexConfigured } from "./_vertex.mjs";
 // Murf Falcon when MURF_API_KEY is set (default), else Google Gemini TTS; mp3 from Sarvam when TTS_PROVIDER=sarvam.
 const PROVIDER = process.env.TTS_PROVIDER || (process.env.MURF_API_KEY ? "murf" : "google");
 const MURF_VOICE = process.env.MURF_VOICE || "en-US-wayne";
@@ -32,20 +33,14 @@ function limited(ip) {
 
 // Streams raw 16-bit PCM (24 kHz mono) to the client as Gemini generates it.
 async function googleStream(text, res) {
-  const r = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${GOOGLE_MODEL}:streamGenerateContent?alt=sse&key=${process.env.GEMINI_API_KEY}`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: `### DIRECTOR'S NOTES\nVoice: deep, warm, male, a little playful. Accent: Indian English. Pace: brisk and conversational. Do not read these notes.\n\n### TRANSCRIPT\n${text}` }] }],
-        generationConfig: {
-          responseModalities: ["AUDIO"],
-          speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: GOOGLE_VOICE } } },
-        },
-      }),
-    }
-  );
+  // Gemini on Vertex AI (service account, Cloud billing), not AI Studio prepaid credits
+  const r = await vertexFetch(GOOGLE_MODEL, "streamGenerateContent", {
+    contents: [{ role: "user", parts: [{ text: `### DIRECTOR'S NOTES\nVoice: deep, warm, male, a little playful. Accent: Indian English. Pace: brisk and conversational. Do not read these notes.\n\n### TRANSCRIPT\n${text}` }] }],
+    generationConfig: {
+      responseModalities: ["AUDIO"],
+      speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: GOOGLE_VOICE } } },
+    },
+  }, "alt=sse");
   if (!r.ok || !r.body) throw new Error("google tts http " + r.status);
   res.setHeader("Content-Type", "audio/L16;rate=24000;channels=1");
   res.setHeader("Cache-Control", "no-store");
@@ -116,7 +111,7 @@ export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).json({ error: "POST only" });
   const useSarvam = PROVIDER === "sarvam" && process.env.SARVAM_API_KEY;
   const useMurf = PROVIDER === "murf" && process.env.MURF_API_KEY;
-  if (!useSarvam && !useMurf && !process.env.GEMINI_API_KEY) return res.status(501).json({ error: "tts not configured" });
+  if (!useSarvam && !useMurf && !vertexConfigured) return res.status(501).json({ error: "tts not configured" });
   const ip = (req.headers["x-forwarded-for"] || "").split(",")[0].trim() || "local";
   if (limited(ip)) return res.status(429).json({ error: "slow down" });
   const text = forSpeech(String(req.body?.text || "").slice(0, 500).trim());

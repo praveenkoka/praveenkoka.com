@@ -20,7 +20,7 @@ A three.js avatar (`public/talk/`) in one of six Gemini-generated worlds (the ch
 - `api/chat.mjs`: Gemini chat with the persona and facts in `api/_persona.mjs`; returns `{ reply, gesture }`.
 - `api/tts.mjs`: streams 16-bit PCM. Default is Murf Falcon (`MURF_API_KEY`, `MURF_VOICE`, default `en-US-wayne`); without a Murf key it falls back to Google Gemini TTS (`GOOGLE_TTS_MODEL`, `GOOGLE_TTS_VOICE`). Set `TTS_PROVIDER=sarvam` and `SARVAM_API_KEY` to use Sarvam Bulbul v3.
 
-Env: `GEMINI_API_KEY` (required, chat), `MURF_API_KEY` (voice), `KV_REST_API_URL` + `KV_REST_API_TOKEN` (Upstash Redis, for the spend cap).
+Env: `GCP_SA_KEY` (required: the Vertex AI service-account key JSON, raw or base64; chat and Google TTS call Gemini on Vertex via `api/_vertex.mjs`, billed to Cloud billing rather than AI Studio credits; optional `VERTEX_PROJECT`, default `tandav-471515`, and `VERTEX_LOCATION`, default `global`), `MURF_API_KEY` (voice), `KV_REST_API_URL` + `KV_REST_API_TOKEN` (Upstash Redis, for the spend cap).
 
 **Spend cap:** `api/_budget.mjs` tracks Gemini spend (chat, plus Google TTS if used) in hourly Redis buckets and caps it at `DAILY_AI_BUDGET_USD` (default $1) over a rolling 24 hours. Over the cap, or if Gemini reports its quota is exhausted, the avatar answers "Sorry, I'm out of tokens for now. Come back in X hours." Murf errors (e.g. the free plan running out) fall back to silent captions, never to paid TTS. Visitor messages are capped at about 60 tokens (240 characters) on the page and the server.
 

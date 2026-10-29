@@ -2,6 +2,7 @@
 import { PERSONA } from "./_persona.mjs";
 import { checkBudget, recordSpend, chatCost, outOfTokens, hoursToPacificMidnight } from "./_budget.mjs";
 import { logExchange } from "./_chatlog.mjs";
+import { vertexFetch } from "./_vertex.mjs";
 
 const MODEL = process.env.CHAT_MODEL || "gemini-3.5-flash-lite";
 const GESTURES = ["none", "nod", "acknowledge", "dance", "salute", "dismiss", "exercise", "guitar"];
@@ -152,36 +153,30 @@ export default async function handler(req, res) {
 
   const exercise = namedExercise(question) || pickKey(EXERCISES); // a named exercise wins; otherwise random
   try {
-    const r = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${process.env.GEMINI_API_KEY}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          systemInstruction: { parts: [{ text: [
-            PERSONA,
-            `For this reply only: if you exercise, the exercise you are doing is ${EXERCISES[exercise]}, so talk about doing exactly that.`,
-            // a random comedic angle per request, so repeat requests (and new visitors) hear different jokes
-            DANCE_RE.test(question) && `If you dance, build the joke around this idea (in your own words): ${pick(DANCE_ANGLES)}. ${ANGLE_RULE}`,
-            GUITAR_RE.test(question) && `If you play air guitar, build the joke around this idea (in your own words): ${pick(GUITAR_ANGLES)}. ${ANGLE_RULE}`,
-            TRILOGY_RE.test(question) && `If you explain what Trilogy is, use only the facts given, put them in fresh words (do not copy the fact wording), and ${pick(TRILOGY_ANGLES)}.`,
-            TECH_RE.test(question) && "The visitor wants technical detail about how this avatar was built: give the deeper technical build answer, not the short one.",
-            EXERCISE_RE.test(question) && `If you exercise, build the joke around this idea (in your own words): ${pick(EXERCISE_ANGLES)}. ${ANGLE_RULE}`,
-          ].filter(Boolean).join("\n\n") }] },
-          contents,
-          generationConfig: {
-            temperature: 0.9,
-            maxOutputTokens: 300,
-            responseMimeType: "application/json",
-            responseSchema: {
-              type: "OBJECT",
-              properties: { reply: { type: "STRING" }, gesture: { type: "STRING", enum: GESTURES }, world: { type: "STRING", enum: WORLDS } },
-              required: ["reply", "gesture"],
-            },
-          },
-        }),
-      }
-    );
+    // Gemini on Vertex AI (service account, Cloud billing), not AI Studio prepaid credits
+    const r = await vertexFetch(MODEL, "generateContent", {
+      systemInstruction: { parts: [{ text: [
+        PERSONA,
+        `For this reply only: if you exercise, the exercise you are doing is ${EXERCISES[exercise]}, so talk about doing exactly that.`,
+        // a random comedic angle per request, so repeat requests (and new visitors) hear different jokes
+        DANCE_RE.test(question) && `If you dance, build the joke around this idea (in your own words): ${pick(DANCE_ANGLES)}. ${ANGLE_RULE}`,
+        GUITAR_RE.test(question) && `If you play air guitar, build the joke around this idea (in your own words): ${pick(GUITAR_ANGLES)}. ${ANGLE_RULE}`,
+        TRILOGY_RE.test(question) && `If you explain what Trilogy is, use only the facts given, put them in fresh words (do not copy the fact wording), and ${pick(TRILOGY_ANGLES)}.`,
+        TECH_RE.test(question) && "The visitor wants technical detail about how this avatar was built: give the deeper technical build answer, not the short one.",
+        EXERCISE_RE.test(question) && `If you exercise, build the joke around this idea (in your own words): ${pick(EXERCISE_ANGLES)}. ${ANGLE_RULE}`,
+      ].filter(Boolean).join("\n\n") }] },
+      contents,
+      generationConfig: {
+        temperature: 0.9,
+        maxOutputTokens: 300,
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: "OBJECT",
+          properties: { reply: { type: "STRING" }, gesture: { type: "STRING", enum: GESTURES }, world: { type: "STRING", enum: WORLDS } },
+          required: ["reply", "gesture"],
+        },
+      },
+    });
     const data = await r.json();
     const spend = data.usageMetadata ? recordSpend(chatCost(data.usageMetadata)) : null;
     // provider-side quota or billing limits: same canned reply, with time until Google's daily reset
@@ -191,7 +186,7 @@ export default async function handler(req, res) {
       await Promise.all([spend, log(reply, "none", { outOfTokens: true })]);
       return res.status(200).json({ reply, gesture: "none", outOfTokens: true });
     }
-    const raw = data.candidates?.[0]?.content?.parts?.map((p) => p.text || "").join("") || "";
+    const raw = data.candidates?.[0]?.content?.parts?.filter((p) => !p.thought).map((p) => p.text || "").join("") || "";
     const out = JSON.parse(raw);
     const reply = String(out.reply || "").replace(/—/g, ", ").trim().slice(0, 400);
     let gesture = GESTURES.includes(out.gesture) ? out.gesture : "none";
